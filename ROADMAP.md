@@ -90,7 +90,7 @@ Key interfaces:
 - [x] React + TypeScript frontend (Vite) with React Flow (`frontend/`); tabs Graph / Search / Repo / Notes / Settings; Vite proxies `/api` to the backend.
 - [x] Live map: click node → details + neighbors in a sidebar; drag/zoom/fitView; node colors by type.
 - [x] Overlay gaps/hypotheses on the live map: "Detect gaps" button + hypotheses list in the sidebar; hypothesis nodes get a dashed pink border and `gap_in` edges a dashed red stroke.
-- [ ] API-key settings UI that writes keys (`scire config set` remains the CLI way), plus encrypt-at-rest with a user passphrase.
+- [x] API-key settings UI that writes keys (`scire config set` remains the CLI way), plus encrypt-at-rest with a user passphrase.
 - [x] PDF ingest behind the API (`POST /api/ingest/pdf` + "Ingest" tab in the UI); pipeline dedupes authors/concepts/claims by title on re-ingest.
 - [x] `paper fetch` behind the API (`POST /api/papers/fetch`, persists by default, UI input in the Search tab).
 

@@ -84,6 +84,7 @@ Tracked here on purpose. Update this list when a limitation is discovered or res
 - [ ] No persistent auth or multi-user model; single local user only. The FastAPI app binds localhost and has no auth — do not expose it publicly.
 - [ ] PDF parsing is plain text only (no tables/formulas yet).
 - [ ] No rate limiting / quota handling for external APIs.
+- [ ] Encrypted key store (`~/.scire/keys.enc`, override with `SCIRE_KEYS_PATH`): keys are unlocked per-process into memory; a server/CLI restart re-locks them, and losing the passphrase makes stored keys unrecoverable (by design).
 - [ ] OmniRoute (local gateway) can return HTTP 429 on `/v1/embeddings` or chat under load — optional LLM/embedding steps degrade to un-embedded nodes instead of aborting.
 - [x] Node deduplication: papers dedupe by (source, external_id), authors by title, repo re-indexing is idempotent (repo/files/chunks). Limitation resolved 2026-07-31; cross-source dedup (same paper in arXiv vs web) and cleanup of pre-fix duplicates still pending.
 - [ ] Semantic Scholar API without a key is rate-limited (HTTP 429) — `scire search` degrades gracefully and returns arXiv + DuckDuckGo results.
@@ -107,9 +108,10 @@ These must pass before any merge. Extend the list as the project grows.
 - [x] `test_repos.py` — mocked GitHub API: repo tree → subgraph; Q&A returns cited answer.
 - [x] `test_memory.py` — user note persisted as node tied to context; actions logged as edges.
 - [x] `test_config.py` — API keys never logged/serialized into graph.
+- [x] `test_secrets.py` — encrypted key store: roundtrip, wrong passphrase, tampered/missing file, no plaintext on disk, parent dir creation.
+- [x] `test_api.py` — FastAPI: graph dump/detail/search, web search adapter merge, paper fetch, PDF upload ingest, notes roundtrip, masked config, config keys write/unlock/lock (keys never returned), chat action logging (TestClient against `scire_test`).
 - [x] `test_cli.py` — `scire whoami` reports provider + key status without a real key.
 - [x] `test_shell.py` — ASCII render (`render_tree`/`find_hub`), JSON export/import roundtrip, `scire shell` REPL commands (all network/LLM mocked).
-- [x] `test_api.py` — FastAPI: graph dump/detail/search, web search adapter merge, paper fetch, PDF upload ingest, notes roundtrip, masked config, chat action logging (TestClient against `scire_test`).
 - [ ] Smoke test (skipped when `SCIRE_CI=1`): real LLM call via `scire chat`.
 
 ## Feedback loop
