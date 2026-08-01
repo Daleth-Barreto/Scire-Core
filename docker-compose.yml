@@ -1,0 +1,15 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: scire-db
+    environment:
+      POSTGRES_USER: scire
+      POSTGRES_PASSWORD: scire
+      POSTGRES_DB: scire
+    ports:
+      - "5432:5432"
+    volumes:
+      - scire_pgdata:/var/lib/postgresql/data
+
+volumes:
+  scire_pgdata:
