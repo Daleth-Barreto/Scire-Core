@@ -54,6 +54,24 @@ feedback/  Retroalimentación del usuario (see below)
 - English for code, docs, and commit messages. You may converse with the user in Spanish.
 - Follow `ROADMAP.md` order. Each phase must end with a runnable CLI demo.
 
+### Commit signatures
+
+- **Routine / minor changes** that need no user approval (docs tweaks, tests, bug fixes, implementing an already-approved plan) are committed with the agent's identity:
+  - `hermes <hermes@scire.local>` when Hermes Agent made the change.
+  - `opencode <opencode@scire.local>` when an OpenCode agent made the change.
+- **Architecture-level changes**, changes that affect locked decisions, or anything the user explicitly confirmed/approved are committed as the developer:
+  - `desarrollador <desarrollador@scire.local>`
+- Mechanism — set author AND committer per commit (one of):
+  ```bash
+  GIT_AUTHOR_NAME=hermes GIT_AUTHOR_EMAIL=hermes@scire.local \
+  GIT_COMMITTER_NAME=hermes GIT_COMMITTER_EMAIL=hermes@scire.local \
+  git commit -m "..."
+  # or
+  git -c user.name=hermes -c user.email=hermes@scire.local commit -m "..."
+  ```
+- The initial baseline commit predates this rule and keeps the developer's global identity.
+- If in doubt about the category, ask the user — a signature you can defend beats a forced push.
+
 ## Known limitations
 
 Tracked here on purpose. Update this list when a limitation is discovered or resolved.
