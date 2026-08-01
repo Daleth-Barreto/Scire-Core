@@ -41,6 +41,7 @@ export interface ConfigInfo {
   embed_model: string | null
   api_key: string
   github_token: string
+  encrypted: boolean
 }
 
 export interface NodeDetail {
@@ -124,6 +125,29 @@ export function addNote(content: string): Promise<{ id: string; title: string }>
 
 export function fetchConfig(): Promise<ConfigInfo> {
   return request<ConfigInfo>('/api/config')
+}
+
+export function saveConfigKeys(
+  passphrase: string,
+  keys: Record<string, string>,
+): Promise<{ status: string; path: string; keys: string[] }> {
+  return request('/api/config/keys', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ passphrase, keys }),
+  })
+}
+
+export function unlockConfig(passphrase: string): Promise<{ status: string; keys: string[] }> {
+  return request('/api/config/unlock', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ passphrase }),
+  })
+}
+
+export function lockConfig(): Promise<{ status: string }> {
+  return request('/api/config/lock', { method: 'POST' })
 }
 
 export function detectGaps(): Promise<string[]> {

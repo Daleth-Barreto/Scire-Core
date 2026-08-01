@@ -120,6 +120,28 @@ button:disabled {
   color: #fca5a5;
 }
 
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0;
+}
+
+.field span {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 6px;
+}
+
+.ok {
+  color: #86efac;
+}
+
 .results {
   list-style: none;
   padding: 0;
