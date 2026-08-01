@@ -5,7 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.schemas import (
     CandidateOut,
     ChatIn,
+    ConfigKeysIn,
     ConfigOut,
+    ConfigUnlockIn,
     GraphOut,
     NoteIn,
     PaperFetchIn,
@@ -201,7 +203,7 @@ def repo_add(body: RepoAddIn) -> dict[str, int | str]:
     from backend.repos.github import GitHubAdapter
     from backend.repos.index import RepoCounts, RepoIndexer
 
-    token = get_settings().github_token.get_secret_value()
+    token = get_settings().effective_github_token().get_secret_value()
     adapter = GitHubAdapter(token=token)
     with session_scope() as session:
         store = GraphStore(session)
@@ -273,6 +275,7 @@ def chat(body: ChatIn) -> dict[str, str]:
 
 @app.get("/api/config", response_model=ConfigOut)
 def config() -> ConfigOut:
+    from backend.core import secrets
     from backend.core.config import get_settings
 
     settings = get_settings()
@@ -280,10 +283,43 @@ def config() -> ConfigOut:
         api_key = mask(settings.provider_api_key.get_secret_value())
     except ValueError:
         api_key = mask("")
-    github_token = mask(settings.github_token.get_secret_value())
+    github_token = mask(settings.effective_github_token().get_secret_value())
     return ConfigOut(
         provider=settings.llm_provider,
         embed_model=settings.embed_model or None,
         api_key=api_key,
         github_token=github_token,
+        encrypted=secrets.keys_path().exists(),
     )
+
+
+@app.post("/api/config/keys")
+def config_save_keys(body: ConfigKeysIn) -> dict[str, object]:
+    from backend.core import secrets
+    from backend.core.config import set_session_keys
+
+    keys = {key: value for key, value in body.keys.items() if value}
+    path = secrets.encrypt_keys(body.passphrase, keys)
+    set_session_keys(keys)
+    return {"status": "saved", "path": str(path), "keys": sorted(keys)}
+
+
+@app.post("/api/config/unlock")
+def config_unlock(body: ConfigUnlockIn) -> dict[str, object]:
+    from backend.core import secrets
+    from backend.core.config import set_session_keys
+
+    try:
+        keys = secrets.decrypt_keys(body.passphrase)
+    except secrets.SecretStoreError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+    set_session_keys(keys)
+    return {"status": "unlocked", "keys": sorted(keys)}
+
+
+@app.post("/api/config/lock")
+def config_lock() -> dict[str, str]:
+    from backend.core.config import clear_session_keys
+
+    clear_session_keys()
+    return {"status": "locked"}

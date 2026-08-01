@@ -39,6 +39,15 @@ def _test_db(mocker):
     mocker.patch("backend.api.main.session_scope", lambda: session_scope(TEST_DB_URL))
 
 
+@pytest.fixture(autouse=True)
+def _clean_session_keys():
+    from backend.core.config import clear_session_keys
+
+    clear_session_keys()
+    yield
+    clear_session_keys()
+
+
 def test_health(client):
     assert client.get("/api/health").json() == {"status": "ok"}
 
@@ -121,6 +130,85 @@ def test_config_masks_keys(client, mocker):
     assert data["api_key"] == mask(raw)
     assert raw not in data["api_key"]
     assert "api_key" in data
+
+
+def _deterministic_settings(mocker):
+    """Force provider=openai with empty env keys so masking tests are hermetic."""
+    from pydantic import SecretStr
+
+    from backend.core.config import get_settings
+
+    settings = get_settings()
+    mocker.patch.object(settings, "llm_provider", "openai")
+    mocker.patch.object(settings, "openai_api_key", SecretStr(""))
+    mocker.patch.object(settings, "github_token", SecretStr(""))
+    return settings
+
+
+def test_config_keys_write_creates_encrypted_file(client, tmp_path, monkeypatch, mocker):
+    _deterministic_settings(mocker)
+    monkeypatch.setenv("SCIRE_KEYS_PATH", str(tmp_path / "keys.enc"))
+
+    resp = client.post(
+        "/api/config/keys",
+        json={"passphrase": "p4ss", "keys": {"OPENAI_API_KEY": "sk-123"}},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "saved"
+
+    enc_path = tmp_path / "keys.enc"
+    assert enc_path.exists()
+    assert b"sk-123" not in enc_path.read_bytes()
+
+    data = client.get("/api/config").json()
+    assert data["encrypted"] is True
+    assert data["api_key"] == mask("sk-123")
+
+
+def test_config_unlock_roundtrip(client, tmp_path, monkeypatch, mocker):
+    from backend.core.config import clear_session_keys
+
+    _deterministic_settings(mocker)
+    monkeypatch.setenv("SCIRE_KEYS_PATH", str(tmp_path / "keys.enc"))
+    client.post(
+        "/api/config/keys",
+        json={"passphrase": "p4ss", "keys": {"OPENAI_API_KEY": "sk-123"}},
+    )
+    clear_session_keys()
+
+    assert client.get("/api/config").json()["api_key"] == "(unset)"
+
+    resp = client.post("/api/config/unlock", json={"passphrase": "p4ss"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "unlocked"
+
+    data = client.get("/api/config").json()
+    assert data["api_key"] == mask("sk-123")
+
+    bad = client.post("/api/config/unlock", json={"passphrase": "wrong"})
+    assert bad.status_code == 401
+
+    client.post("/api/config/lock")
+    assert client.get("/api/config").json()["api_key"] == "(unset)"
+
+
+def test_config_keys_never_returned(client, tmp_path, monkeypatch, mocker):
+    _deterministic_settings(mocker)
+    monkeypatch.setenv("SCIRE_KEYS_PATH", str(tmp_path / "keys.enc"))
+    client.post(
+        "/api/config/keys",
+        json={
+            "passphrase": "p4ss",
+            "keys": {"OPENAI_API_KEY": "sk-123", "GITHUB_TOKEN": "ghp_secret"},
+        },
+    )
+
+    for resp in (
+        client.get("/api/config"),
+        client.post("/api/config/unlock", json={"passphrase": "p4ss"}),
+    ):
+        assert "sk-123" not in resp.text
+        assert "ghp_secret" not in resp.text
 
 
 def test_ingest_pdf_endpoint(client, mocker, tmp_path):

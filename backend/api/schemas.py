@@ -68,3 +68,13 @@ class ConfigOut(BaseModel):
     embed_model: str | None = None
     api_key: str
     github_token: str
+    encrypted: bool = False
+
+
+class ConfigKeysIn(BaseModel):
+    passphrase: str
+    keys: dict[str, str]
+
+
+class ConfigUnlockIn(BaseModel):
+    passphrase: str

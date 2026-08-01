@@ -26,8 +26,14 @@ def _fernet(passphrase: str, salt: bytes) -> Fernet:
     return Fernet(key)
 
 
+def keys_path() -> Path:
+    """Location of the encrypted key store (override via SCIRE_KEYS_PATH)."""
+    override = os.environ.get("SCIRE_KEYS_PATH")
+    return Path(override) if override else DEFAULT_KEYS_FILE
+
+
 def encrypt_keys(passphrase: str, keys: dict[str, str], path: str | Path | None = None) -> Path:
-    target = Path(path) if path is not None else DEFAULT_KEYS_FILE
+    target = Path(path) if path is not None else keys_path()
     salt = os.urandom(16)
     token = _fernet(passphrase, salt).encrypt(json.dumps(keys).encode("utf-8"))
     envelope = {
@@ -41,7 +47,7 @@ def encrypt_keys(passphrase: str, keys: dict[str, str], path: str | Path | None 
 
 
 def decrypt_keys(passphrase: str, path: str | Path | None = None) -> dict[str, str]:
-    target = Path(path) if path is not None else DEFAULT_KEYS_FILE
+    target = Path(path) if path is not None else keys_path()
     if not target.exists():
         raise SecretStoreError(f"encrypted key store not found at {target}")
     try:
