@@ -44,12 +44,9 @@ def test_export_import_roundtrip(session):
     assert len(target.list_edges()) == 2
 
 
-def test_shell_commands(session, mocker):
+def test_shell_commands(session, mocker, fake_embedder):
     fake_provider = mocker.MagicMock()
     fake_provider.chat.return_value = "a reply"
-    fake_embedder = mocker.MagicMock()
-    fake_embedder.embed.return_value = [[0.1] * 3072]
-    mocker.patch("backend.core.providers.get_embedder", return_value=fake_embedder)
     mocker.patch("backend.shell.session_scope", lambda: session_scope(TEST_DB_URL))
 
     from backend.memory.notes import list_notes

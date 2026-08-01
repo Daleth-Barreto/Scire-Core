@@ -109,7 +109,7 @@ def test_search_web_academic(client, mocker):
     assert "web" in sources
 
 
-def test_notes_roundtrip(client):
+def test_notes_roundtrip(client, fake_embedder):
     created = client.post("/api/notes", json={"content": "a thought"}).json()
     notes = client.get("/api/notes").json()
     assert any(n["id"] == created["id"] for n in notes)
@@ -259,7 +259,7 @@ def test_ingest_pdf_endpoint(client, mocker, tmp_path):
     assert bad.status_code == 400
 
 
-def test_paper_fetch_persists(client, mocker):
+def test_paper_fetch_persists(client, mocker, fake_embedder):
     arxiv_response = mocker.MagicMock()
     arxiv_response.text = ATOM_XML
     mocker.patch.object(httpx.Client, "get", return_value=arxiv_response)

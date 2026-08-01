@@ -48,6 +48,7 @@ feedback/  Retroalimentación del usuario (see below)
 - Do not commit secrets. API keys live only in user config / `.env`, never hardcoded.
 - Never print full API keys in CLI output. `scire config show` and `whoami` only report masked values or set/unset status.
 - All network/LLM calls MUST go behind an abstraction so tests can mock them.
+- Tests MUST be hermetic: they pass with an empty `.env.example` and no real network. Embedding paths use the `fake_embedder` fixture (patches `get_embedder` at every import site) — never rely on real keys being present.
 - All httpx clients MUST set explicit timeouts (LLM providers 120s, API adapters 30s); never rely on httpx's 5s default.
 - Optional LLM/embedding steps (summaries, embeddings, extractions) MUST catch `httpx.HTTPError` and degrade, never abort the command on a rate limit or network error.
 - The CLI entrypoint forces UTF-8 on stdout/stderr (`errors="replace"`) — on Windows cp1252 consoles any Unicode output would otherwise crash with `UnicodeEncodeError`.
