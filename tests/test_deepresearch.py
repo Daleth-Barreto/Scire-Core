@@ -136,6 +136,19 @@ def test_deepresearch_unparseable_verifier_degrades(mocker):
     assert result.markdown == "brief"
 
 
+def test_deepresearch_unparseable_researcher_degrades(mocker):
+    provider = _provider_that_returns(
+        "not json at all",
+        "brief with [1]",
+        json.dumps({"verified": True, "issues": []}),
+    )
+
+    result = deepresearch("rag", sources=SOURCES, provider=provider)
+
+    assert result.markdown == "brief with [1]"
+    assert result.verified is True
+
+
 def test_deepresearch_without_sources_raises(mocker):
     provider = _provider_that_returns("{}", "brief", "{}")
     with pytest.raises(ValueError, match="no sources"):

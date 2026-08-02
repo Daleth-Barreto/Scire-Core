@@ -1,3 +1,4 @@
+import os
 import tempfile
 from pathlib import Path
 
@@ -139,9 +140,11 @@ def fulltext_cmd(
     if not persist:
         typer.echo(text[:2000])
         return
-    tmp = Path(tempfile.mktemp(suffix=".txt"))
+    fd, tmp_name = tempfile.mkstemp(suffix=".txt")
+    tmp = Path(tmp_name)
     try:
-        tmp.write_text(text, encoding="utf-8")
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
         with session_scope() as session:
             counts = IngestPipeline(GraphStore(session)).ingest(tmp)
         typer.echo(

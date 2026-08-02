@@ -96,6 +96,8 @@ Tracked here on purpose. Update this list when a limitation is discovered or res
 - [ ] Graph has no schema versioning or migration path beyond raw SQLAlchemy.
 - [ ] OpenRouter compatible, but embedding models not available on OpenRouter — embeddings use OpenAI or the OmniRoute `/v1/embeddings` endpoint instead.
 - [ ] No offline/local model support yet (Ollama planned).
+- [ ] Prompt injection surface: `deepresearch`/`audit`/ingest feed external text (paper titles, abstracts, PDF text) into LLM prompts without sanitization. The verifier stage mitigates unsupported claims, but a hostile document could still steer the researcher/writer. Accepted risk for a local single-user tool; revisit if multi-user/web.
+- [ ] `tempfile.mktemp` historically used in `cli/commands/search.py` fulltext path — replaced with `mkstemp` (TOCTOU-safe) in the 2026-08-02 QA pass.
 
 ## Required test suite
 

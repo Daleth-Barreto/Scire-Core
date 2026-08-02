@@ -119,17 +119,21 @@ def deepresearch(
     limit: int = 5,
     provider: LLMProvider | None = None,
 ) -> ResearchBrief:
-    provider = provider or get_provider()
     sources = sources if sources is not None else gather_sources(topic, limit=limit)
     if not sources:
         raise ValueError("no sources found for topic (check network/adapters)")
 
+    provider = provider or get_provider()
+
     source_block = _format_sources(sources)
-    research = _parse_json(
-        provider.chat(
-            [ChatMessage(role="user", content=RESEARCHER_PROMPT.format(topic=topic, sources=source_block))]
+    try:
+        research = _parse_json(
+            provider.chat(
+                [ChatMessage(role="user", content=RESEARCHER_PROMPT.format(topic=topic, sources=source_block))]
+            )
         )
-    )
+    except (json.JSONDecodeError, TypeError):
+        research = {"sections": [], "conflicts": [], "gaps": []}
     brief = provider.chat(
         [
             ChatMessage(
