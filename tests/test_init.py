@@ -1,5 +1,3 @@
-import textwrap
-
 import pytest
 
 from backend.setup.init import InitResult, run_init, write_env_file
