@@ -125,6 +125,8 @@ def paper_fetch(body: PaperFetchIn) -> CandidateOut:
         "arxiv": "backend.search.arxiv.ArxivAdapter",
         "ss": "backend.search.semantic_scholar.SemanticScholarAdapter",
         "semanticscholar": "backend.search.semantic_scholar.SemanticScholarAdapter",
+        "oa": "backend.search.openalex.OpenAlexAdapter",
+        "openalex": "backend.search.openalex.OpenAlexAdapter",
     }
     if not sep or source not in adapters:
         raise HTTPException(status_code=400, detail="expected <arxiv|ss>:<id>")
@@ -163,11 +165,17 @@ def graph_gaps() -> list[str]:
 def search(body: SearchIn) -> list[CandidateOut]:
     from backend.search.arxiv import ArxivAdapter
     from backend.search.duckduckgo import DuckDuckGoAdapter
+    from backend.search.openalex import OpenAlexAdapter
     from backend.search.semantic_scholar import SemanticScholarAdapter
 
     candidates: list[CandidateOut] = []
     seen: set[tuple[str, str]] = set()
-    for adapter in (ArxivAdapter(), SemanticScholarAdapter(), DuckDuckGoAdapter()):
+    for adapter in (
+        ArxivAdapter(),
+        OpenAlexAdapter(),
+        SemanticScholarAdapter(),
+        DuckDuckGoAdapter(),
+    ):
         try:
             for cand in adapter.search(body.query, limit=body.limit):
                 key = (cand.source, cand.external_id)

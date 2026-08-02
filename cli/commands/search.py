@@ -6,6 +6,7 @@ from backend.graph.store import GraphStore
 from backend.search.arxiv import ArxivAdapter
 from backend.search.base import CandidateNode, SearchAdapter
 from backend.search.duckduckgo import DuckDuckGoAdapter
+from backend.search.openalex import OpenAlexAdapter
 from backend.search.semantic_scholar import SemanticScholarAdapter
 
 paper_app = typer.Typer(help="Fetch a specific paper.")
@@ -14,11 +15,13 @@ FETCH_ADAPTERS: dict[str, type[SearchAdapter]] = {
     "arxiv": ArxivAdapter,
     "ss": SemanticScholarAdapter,
     "semanticscholar": SemanticScholarAdapter,
+    "oa": OpenAlexAdapter,
+    "openalex": OpenAlexAdapter,
 }
 
 
 def _search_adapters() -> list[SearchAdapter]:
-    return [ArxivAdapter(), SemanticScholarAdapter(), DuckDuckGoAdapter()]
+    return [ArxivAdapter(), OpenAlexAdapter(), SemanticScholarAdapter(), DuckDuckGoAdapter()]
 
 
 def _persist(store: GraphStore, candidates: list[CandidateNode], action: str = "persist") -> None:

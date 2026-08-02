@@ -3,6 +3,7 @@ import httpx
 from backend.graph.store import GraphStore
 from backend.search.arxiv import ArxivAdapter, parse_atom
 from backend.search.duckduckgo import DuckDuckGoAdapter, parse_html
+from backend.search.openalex import OpenAlexAdapter
 from backend.search.persist import persist_candidates
 from backend.search.semantic_scholar import SemanticScholarAdapter
 from tests.conftest import make_embed
@@ -52,6 +53,34 @@ DDG_HTML = """
 </div>
 </div></body></html>
 """
+
+OPENALEX_SEARCH = {
+    "meta": {"count": 1},
+    "results": [
+        {
+            "id": "https://openalex.org/W2741809807",
+            "doi": "https://doi.org/10.48550/arXiv.1706.03762",
+            "title": "Attention Is All You Need",
+            "publication_date": "2017-06-12",
+            "authorships": [
+                {"author": {"display_name": "Ashish Vaswani"}},
+                {"author": {"display_name": "Noam Shazeer"}},
+            ],
+            "primary_location": {"landing_page_url": "https://arxiv.org/abs/1706.03762"},
+            "abstract_inverted_index": {"Attention": [0], "Is": [1], "All": [2], "You": [3], "Need": [4]},
+        }
+    ],
+}
+
+OPENALEX_WORK = {
+    "id": "https://openalex.org/W2741809807",
+    "doi": "https://doi.org/10.48550/arXiv.1706.03762",
+    "title": "Attention Is All You Need",
+    "publication_date": "2017-06-12",
+    "authorships": [{"author": {"display_name": "Ashish Vaswani"}}],
+    "primary_location": {"landing_page_url": "https://arxiv.org/abs/1706.03762"},
+    "abstract_inverted_index": {"Attention": [0], "Is": [1], "All": [2], "You": [3], "Need": [4]},
+}
 
 
 def _mock_get(mocker, response):
@@ -107,6 +136,51 @@ def test_semantic_scholar_fetch_404_returns_none(mocker):
     _mock_get(mocker, response)
 
     assert SemanticScholarAdapter().fetch("missing") is None
+
+
+def test_openalex_search_parses_response(mocker):
+    response = mocker.MagicMock()
+    response.json.return_value = OPENALEX_SEARCH
+    _mock_get(mocker, response)
+
+    candidates = OpenAlexAdapter().search("attention", limit=1)
+    assert len(candidates) == 1
+    cand = candidates[0]
+    assert cand.title == "Attention Is All You Need"
+    assert cand.authors == ["Ashish Vaswani", "Noam Shazeer"]
+    assert cand.external_id == "W2741809807"
+    assert cand.source == "openalex"
+    assert cand.published == "2017-06-12"
+    assert cand.summary == "Attention Is All You Need"
+    assert cand.url == "https://arxiv.org/abs/1706.03762"
+
+
+def test_openalex_search_empty_results(mocker):
+    response = mocker.MagicMock()
+    response.json.return_value = {"meta": {"count": 0}, "results": []}
+    _mock_get(mocker, response)
+
+    assert OpenAlexAdapter().search("nothing", limit=5) == []
+
+
+def test_openalex_fetch_by_openalex_id(mocker):
+    response = mocker.MagicMock()
+    response.json.return_value = OPENALEX_WORK
+    mocked_get = _mock_get(mocker, response)
+
+    cand = OpenAlexAdapter().fetch("W2741809807")
+    assert cand is not None
+    assert cand.title == "Attention Is All You Need"
+    url = mocked_get.call_args[0][0]
+    assert url.endswith("/W2741809807")
+
+
+def test_openalex_fetch_404_returns_none(mocker):
+    response = mocker.MagicMock()
+    response.status_code = 404
+    _mock_get(mocker, response)
+
+    assert OpenAlexAdapter().fetch("W9999999999") is None
 
 
 def test_parse_duckduckgo_html():
