@@ -90,7 +90,7 @@ def _graph_ready(project_dir: Path, database_url: str | None = None) -> bool:
     try:
         engine = get_engine(database_url)
         with engine.connect() as conn:
-            return conn.execute(text("SELECT to_regclass('public.nodes') IS NOT NULL")).scalar()
+            return bool(conn.execute(text("SELECT to_regclass('public.nodes') IS NOT NULL")).scalar())
     except SQLAlchemyError:
         return False
 
