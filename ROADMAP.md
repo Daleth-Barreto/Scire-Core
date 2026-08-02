@@ -102,7 +102,7 @@ Key interfaces:
 ### Phase 9 — Research workflows (sire rank & beyond)
 - [x] `scire rank <topic>` — PaperRank-style scoring over the graph (citations, recency, hub authors), inspired by feynman's `rank`. Implemented 2026-08-02: relevance + citations (edges + OpenAlex `cited_by_count`) + method evidence (repo/claim/hypothesis) + provenance.
 - [x] `scire audit <paper> <repo>` — compare a paper's claims against a codebase. Implemented 2026-08-02: LLM verdicts (supported/refuted/not-evidenced) per claim with `path:line` citations (`backend/repos/audit.py`).
-- [ ] `scire deepresearch <topic>` — multi-agent pipeline (researcher → reviewer → writer → verifier) with cited briefs.
+- [x] `scire deepresearch <topic>` — multi-agent pipeline (researcher → writer → verifier) with cited briefs. Implemented 2026-08-02: real sources from arXiv/OpenAlex/Europe PMC, numbered `[n]` citations, verifier flags unsupported claims (`backend/research/deepresearch.py`).
 
 ### Phase 10 — Install & UX (opencode-level DX)
 - [ ] One-command install (standalone binary / `pipx` / installer script), no manual Postgres setup (embedded or bundled defaults).

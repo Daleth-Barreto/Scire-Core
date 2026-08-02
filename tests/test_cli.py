@@ -94,6 +94,52 @@ def test_audit_bad_repo_format():
     assert "owner/name" in result.output
 
 
+def test_deepresearch_prints_brief_and_verdict(mocker, monkeypatch, tmp_path):
+    import json
+
+    from backend.research.deepresearch import SourceNote
+
+    fake_provider = mocker.MagicMock()
+    fake_provider.chat.side_effect = [
+        json.dumps(
+            {
+                "sections": [{"heading": "Approach", "points": ["RAG couples retrieval with generation"]}],
+                "conflicts": [],
+                "gaps": [],
+            }
+        ),
+        "## RAG\n\nRAG augments LLMs [1].",
+        json.dumps({"verified": True, "issues": []}),
+    ]
+    mocker.patch("backend.research.deepresearch.get_provider", return_value=fake_provider)
+    mocker.patch(
+        "backend.research.deepresearch.gather_sources",
+        return_value=[
+            SourceNote(
+                title="RAG Paper",
+                url="https://arxiv.org/abs/2005.11401",
+                source="arxiv",
+            )
+        ],
+    )
+
+    out = tmp_path / "brief.md"
+    result = runner.invoke(app, ["deepresearch", "rag", "--save", str(out)])
+    assert result.exit_code == 0
+    assert "## RAG" in result.output
+    assert "RAG augments LLMs [1]." in result.output
+    assert "verdict: verified" in result.output
+    assert "RAG Paper" in result.output
+    assert out.exists()
+
+
+def test_deepresearch_no_sources_prints_error(mocker):
+    mocker.patch("backend.research.deepresearch.gather_sources", return_value=[])
+    result = runner.invoke(app, ["deepresearch", "rag"])
+    assert result.exit_code == 2
+    assert "no sources found" in result.output
+
+
 def test_rank_prints_scored_papers(session, mocker, monkeypatch):
     from backend.graph.store import GraphStore
 

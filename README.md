@@ -33,6 +33,7 @@ uv run scire paper fulltext epmc:PMC12921246
 uv run scire rank "retrieval augmented generation"   # PaperRank with evidence
 uv run scire repo add psf/requests && uv run scire repo ask psf/requests "how does X work?"
 uv run scire audit "Attention Paper" psf/requests    # paper claims vs repo code
+uv run scire deepresearch "retrieval augmented generation"   # multi-agent cited brief
 uv run scire ingest pdf paper.pdf
 uv run scire shell            # interactive REPL
 ```
