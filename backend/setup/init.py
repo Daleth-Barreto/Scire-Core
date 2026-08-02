@@ -67,7 +67,7 @@ def _ensure_database(
             conn.execute(f"CREATE DATABASE {db_name} OWNER {db_user}")
             db_status = "created"
 
-    db_url, _, db_path = admin_url.rpartition("/")
+    db_url, _, _ = admin_url.rpartition("/")
     with _admin_conn(f"{db_url}/{db_name}") as conn:
         vector_exists = conn.execute(
             "SELECT 1 FROM pg_extension WHERE extname = 'vector'"
