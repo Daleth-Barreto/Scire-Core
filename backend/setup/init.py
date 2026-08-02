@@ -3,6 +3,7 @@ from pathlib import Path
 
 import psycopg
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from backend.graph.db import get_engine
 from backend.graph.models import Base
@@ -90,7 +91,7 @@ def _graph_ready(project_dir: Path, database_url: str | None = None) -> bool:
         engine = get_engine(database_url)
         with engine.connect() as conn:
             return conn.execute(text("SELECT to_regclass('public.nodes') IS NOT NULL")).scalar()
-    except Exception:
+    except SQLAlchemyError:
         return False
 
 
