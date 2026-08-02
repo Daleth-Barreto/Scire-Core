@@ -109,6 +109,7 @@ These must pass before any merge. Extend the list as the project grows.
 - [x] `test_ingest.py` — PDF fixture → text → chunks; entities extracted with mocked LLM; re-ingest dedupes authors/concepts/claims by title.
 - [x] `test_search_adapters.py` — arXiv + OpenAlex + Semantic Scholar + Europe PMC + DuckDuckGo (web) adapters parse mocked responses into candidate nodes; Europe PMC fulltext XML parsing.
 - [x] `test_repos.py` — mocked GitHub API: repo tree → subgraph; Q&A returns cited answer.
+- [x] `test_audit.py` — paper claims vs repo chunks: LLM verdicts (supported/refuted/not-evidenced) with `path:line` evidence; missing paper/claims/repo errors.
 - [x] `test_memory.py` — user note persisted as node tied to context; actions logged as edges.
 - [x] `test_config.py` — API keys never logged/serialized into graph.
 - [x] `test_secrets.py` — encrypted key store: roundtrip, wrong passphrase, tampered/missing file, no plaintext on disk, parent dir creation.

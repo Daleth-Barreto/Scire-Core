@@ -48,6 +48,52 @@ def test_chat_returns_reply(monkeypatch):
     assert result.output.strip() == "hola humano"
 
 
+def test_audit_prints_verdicts(session, mocker, monkeypatch):
+    import json
+
+    from backend.graph.store import GraphStore
+
+    store = GraphStore(session)
+    paper = store.upsert_node(type="paper", title="Attention Paper", embedding=make_embed(1))
+    claim = store.upsert_node(
+        type="claim", title="Attention scales as QK^T", embedding=make_embed(0)
+    )
+    store.upsert_edge(source_id=paper.id, target_id=claim.id, type="mentions")
+    repo = store.upsert_node(type="repo", title="demo/repo")
+    store.upsert_node(
+        type="chunk",
+        title="src/app.py",
+        summary="def attention(): pass",
+        embedding=make_embed(0),
+        properties={"repo": repo.id, "path": "src/app.py", "start_line": 10},
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        "cli.commands.audit.session_scope", lambda: session_scope(TEST_DB_URL)
+    )
+    fake_provider = mocker.MagicMock()
+    fake_provider.chat.return_value = json.dumps(
+        {"verdict": "supported", "evidence": "src/app.py:10", "reason": "found"}
+    )
+    mocker.patch("backend.repos.audit.get_provider", return_value=fake_provider)
+    fake_embedder = mocker.MagicMock()
+    fake_embedder.embed.side_effect = lambda texts: [make_embed(0) for _ in texts]
+    mocker.patch("backend.repos.audit.get_embedder", return_value=fake_embedder)
+
+    result = runner.invoke(app, ["audit", "Attention Paper", "demo/repo"])
+    assert result.exit_code == 0
+    assert "1 supported" in result.output
+    assert "[OK] Attention scales as QK^T" in result.output
+    assert "src/app.py:10" in result.output
+
+
+def test_audit_bad_repo_format():
+    result = runner.invoke(app, ["audit", "Some Paper", "norepo"])
+    assert result.exit_code == 2
+    assert "owner/name" in result.output
+
+
 def test_rank_prints_scored_papers(session, mocker, monkeypatch):
     from backend.graph.store import GraphStore
 
