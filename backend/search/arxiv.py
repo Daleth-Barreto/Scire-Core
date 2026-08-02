@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 
 import httpx
 
+from backend.core.cache import ttl_cache
 from backend.search.base import CandidateNode, SearchAdapter
 
 ATOM = "{http://www.w3.org/2005/Atom}"
@@ -36,6 +37,7 @@ class ArxivAdapter(SearchAdapter):
     def __init__(self, client: httpx.Client | None = None) -> None:
         self._client = client or httpx.Client(timeout=30.0)
 
+    @ttl_cache(ttl=300.0)
     def search(self, query: str, limit: int = 10) -> list[CandidateNode]:
         response = self._client.get(
             self.BASE_URL,

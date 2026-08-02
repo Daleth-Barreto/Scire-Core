@@ -2,11 +2,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import psycopg
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from backend.graph.db import get_engine
-from backend.graph.models import Base
 
 DEFAULT_DB_NAME = "scire"
 DEFAULT_DB_USER = "scire"
@@ -83,7 +84,13 @@ def _ensure_database(
 
 
 def _create_tables(project_dir: Path, database_url: str | None) -> None:
-    Base.metadata.create_all(get_engine(database_url))
+    cfg = Config(str(project_dir / "alembic.ini"))
+    if database_url:
+        cfg.set_main_option("sqlalchemy.url", database_url)
+    if _graph_ready(project_dir, database_url):
+        command.stamp(cfg, "head")
+    else:
+        command.upgrade(cfg, "head")
 
 
 def _graph_ready(project_dir: Path, database_url: str | None = None) -> bool:

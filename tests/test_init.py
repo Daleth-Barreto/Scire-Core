@@ -34,7 +34,7 @@ def test_run_init_reports_summary(mocker, tmp_path):
     (tmp_path / ".env.example").write_text("LLM_PROVIDER=openrouter\n", encoding="utf-8")
     mock_admin = mocker.patch("backend.setup.init._ensure_database", return_value=("role-created", "db-created", "vector-created"))
     mock_tables = mocker.patch("backend.setup.init._create_tables")
-    mock_check = mocker.patch("backend.setup.init._graph_ready", return_value=True)
+    mocker.patch("backend.setup.init._graph_ready", return_value=True)
 
     result = run_init(tmp_path, admin_url="postgresql+psycopg://admin:pw@localhost:5432/postgres")
 
@@ -54,7 +54,7 @@ def test_run_init_without_admin_url_skips_db(mocker, tmp_path):
     (tmp_path / ".env.example").write_text("LLM_PROVIDER=openrouter\n", encoding="utf-8")
     mock_admin = mocker.patch("backend.setup.init._ensure_database")
     mock_tables = mocker.patch("backend.setup.init._create_tables")
-    mock_check = mocker.patch("backend.setup.init._graph_ready", return_value=False)
+    mocker.patch("backend.setup.init._graph_ready", return_value=False)
 
     result = run_init(tmp_path)
 
@@ -100,7 +100,7 @@ def test_ensure_database_detects_existing(mocker):
 
     from backend.setup.init import _ensure_database
 
-    role, db, vector = _ensure_database("postgresql+psycopg://admin:pw@localhost:5432/postgres")
+    role, db, _ = _ensure_database("postgresql+psycopg://admin:pw@localhost:5432/postgres")
 
     assert role == "exists"
     assert db == "exists"

@@ -3,6 +3,7 @@ from typing import Any
 
 import httpx
 
+from backend.core.cache import ttl_cache
 from backend.search.base import CandidateNode, SearchAdapter
 
 BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest"
@@ -43,6 +44,7 @@ class EuropePMCAdapter(SearchAdapter):
     def __init__(self, client: httpx.Client | None = None) -> None:
         self._client = client or httpx.Client(timeout=30.0)
 
+    @ttl_cache(ttl=300.0)
     def search(self, query: str, limit: int = 10) -> list[CandidateNode]:
         response = self._client.get(
             f"{BASE_URL}/search",

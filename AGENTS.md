@@ -48,6 +48,8 @@ feedback/  Retroalimentación del usuario (see below)
 - Do not commit secrets. API keys live only in user config / `.env`, never hardcoded.
 - Never print full API keys in CLI output. `scire config show` and `whoami` only report masked values or set/unset status.
 - All network/LLM calls MUST go behind an abstraction so tests can mock them.
+- Search adapters MUST be decorated with `@ttl_cache` so repeated queries within a process reuse results instead of hitting the API again (see `backend/core/cache.py`).
+- Schema changes MUST ship an Alembic revision (`backend/graph/migrations/`) — never raw `create_all` — and update `test_migrations.py`.
 - Tests MUST be hermetic: they pass with an empty `.env.example` and no real network. Embedding paths use the `fake_embedder` fixture (patches `get_embedder` at every import site) — never rely on real keys being present.
 - All httpx clients MUST set explicit timeouts (LLM providers 120s, API adapters 30s); never rely on httpx's 5s default.
 - Optional LLM/embedding steps (summaries, embeddings, extractions) MUST catch `httpx.HTTPError` and degrade, never abort the command on a rate limit or network error.
@@ -62,6 +64,7 @@ feedback/  Retroalimentación del usuario (see below)
   - `opencode <opencode@scire.local>` when an OpenCode agent made the change.
 - **Architecture-level changes**, changes that affect locked decisions, or anything the user explicitly confirmed/approved are committed as the developer:
   - `desarrollador <desarrollador@scire.local>`
+- When the user explicitly asks to sign with their own identity, commit as `Daleth-Barreto <alandaleth.hb@gmail.com>` (author AND committer).
 - Mechanism — set author AND committer per commit (one of):
   ```bash
   GIT_AUTHOR_NAME=hermes GIT_AUTHOR_EMAIL=hermes@scire.local \
@@ -92,8 +95,8 @@ Tracked here on purpose. Update this list when a limitation is discovered or res
 - [ ] Europe PMC (added 2026-08-02) — search/fetch work keyless via `EXT_ID:`/`PMCID:` search; the `fullTextXML` endpoint has been returning 404 for all IDs (observed 2026-08-02, even for the docs' own example), so `scire paper fulltext epmc:<id>` reports "fulltext not available" until the service recovers.
 - [ ] DuckDuckGo web adapter scrapes `duckduckgo.com/html/` HTML — no API key, but the HTML layout can change and the endpoint may 302/429 or serve a CAPTCHA; it is best-effort, not a hard SLA.
 - [ ] GitHub API without a token is rate-limited (60 req/hr) — `scire repo add` works for small repos; set `GITHUB_TOKEN` in `.env` to index large ones.
-- [ ] No caching layer for repeated search/LLM calls.
-- [ ] Graph has no schema versioning or migration path beyond raw SQLAlchemy.
+- [x] No caching layer — resolved 2026-08-02: in-process TTL cache (`backend/core/cache.py`, `@ttl_cache` on search adapters, 300s, LRU 256). In-memory only: not shared across processes, so repeated CLI invocations still hit the network.
+- [x] Graph has no schema versioning — resolved 2026-08-02: Alembic migrations (`backend/graph/migrations/`, `alembic.ini`). `scire init` runs `upgrade head` on a fresh DB and `stamp head` when tables already exist. New schema changes MUST ship a new revision, not `create_all`.
 - [ ] OpenRouter compatible, but embedding models not available on OpenRouter — embeddings use OpenAI or the OmniRoute `/v1/embeddings` endpoint instead.
 - [ ] No offline/local model support yet (Ollama planned).
 - [ ] Prompt injection surface: `deepresearch`/`audit`/ingest feed external text (paper titles, abstracts, PDF text) into LLM prompts without sanitization. The verifier stage mitigates unsupported claims, but a hostile document could still steer the researcher/writer. Accepted risk for a local single-user tool; revisit if multi-user/web.
@@ -114,13 +117,15 @@ These must pass before any merge. Extend the list as the project grows.
 - [x] `test_audit.py` — paper claims vs repo chunks: LLM verdicts (supported/refuted/not-evidenced) with `path:line` evidence; missing paper/claims/repo errors.
 - [x] `test_deepresearch.py` — multi-agent pipeline: researcher synthesizes real sources → writer briefs with `[n]` citations → verifier flags unsupported claims; degrades on HTTP errors and unparseable output.
 - [x] `test_init.py` — `scire init` wizard: `.env` from `.env.example` (no overwrite), role/DB/pgvector creation via admin URL (psycopg, detects existing), table readiness.
+- [x] `test_cache.py` — in-process TTL cache: roundtrip, expiry, LRU eviction, shared across adapter instances, per-args keys, clear.
+- [x] `test_migrations.py` — Alembic: `upgrade head` builds the full schema from scratch, idempotent, `stamp head` marks an existing schema.
 - [x] `test_memory.py` — user note persisted as node tied to context; actions logged as edges.
 - [x] `test_config.py` — API keys never logged/serialized into graph.
 - [x] `test_secrets.py` — encrypted key store: roundtrip, wrong passphrase, tampered/missing file, no plaintext on disk, parent dir creation.
 - [x] `test_api.py` — FastAPI: graph dump/detail/search, web search adapter merge, paper fetch, PDF upload ingest, notes roundtrip, masked config, config keys write/unlock/lock (keys never returned), chat action logging (TestClient against `scire_test`).
 - [x] `test_cli.py` — `scire whoami` reports provider + key status without a real key.
 - [x] `test_shell.py` — ASCII render (`render_tree`/`find_hub`), JSON export/import roundtrip, `scire shell` REPL commands (all network/LLM mocked).
-- [ ] Smoke test (skipped when `SCIRE_CI=1`): real LLM call via `scire chat`.
+- [x] Smoke test (skipped when `SCIRE_CI=1`): real LLM call via `scire chat`.
 
 ## Feedback loop
 

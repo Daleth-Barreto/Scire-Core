@@ -3,10 +3,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
+from backend.core.cache import clear_caches
 from backend.graph.db import get_session_factory
 from backend.graph.models import EMBED_DIM, Base
 
 TEST_DB_URL = "postgresql+psycopg://scire:scire@localhost:5432/scire_test"
+
+
+@pytest.fixture(autouse=True)
+def _clean_caches():
+    clear_caches()
+    yield
+    clear_caches()
 
 
 @pytest.fixture()

@@ -3,6 +3,7 @@ from urllib.parse import unquote
 
 import httpx
 
+from backend.core.cache import ttl_cache
 from backend.search.base import CandidateNode, SearchAdapter
 
 
@@ -75,6 +76,7 @@ class DuckDuckGoAdapter(SearchAdapter):
             timeout=30.0, follow_redirects=True, headers={"User-Agent": "scire/0.1"}
         )
 
+    @ttl_cache(ttl=300.0)
     def search(self, query: str, limit: int = 10) -> list[CandidateNode]:
         response = self._client.get(self.SEARCH_URL, params={"q": query})
         response.raise_for_status()

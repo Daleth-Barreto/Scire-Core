@@ -39,6 +39,15 @@ uv run scire ingest pdf paper.pdf
 uv run scire shell            # interactive REPL
 ```
 
+Global install (alternative to the repo checkout):
+
+```bash
+uv build && uv tool install dist/scire-0.1.0-py3-none-any.whl   # or: pipx install .
+scire whoami
+```
+
+Repeated searches within a process are cached (in-process TTL, 300s); schema changes ship as Alembic migrations under `backend/graph/migrations/`.
+
 ## Tests
 
 ```bash
