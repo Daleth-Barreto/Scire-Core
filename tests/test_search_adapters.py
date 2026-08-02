@@ -3,6 +3,7 @@ import httpx
 from backend.graph.store import GraphStore
 from backend.search.arxiv import ArxivAdapter, parse_atom
 from backend.search.duckduckgo import DuckDuckGoAdapter, parse_html
+from backend.search.europepmc import EuropePMCAdapter
 from backend.search.openalex import OpenAlexAdapter
 from backend.search.persist import persist_candidates
 from backend.search.semantic_scholar import SemanticScholarAdapter
@@ -81,6 +82,37 @@ OPENALEX_WORK = {
     "primary_location": {"landing_page_url": "https://arxiv.org/abs/1706.03762"},
     "abstract_inverted_index": {"Attention": [0], "Is": [1], "All": [2], "You": [3], "Need": [4]},
 }
+
+EUROPE_PMC_ARTICLE = {
+    "id": "42350398",
+    "source": "MED",
+    "pmid": "42350398",
+    "pmcid": None,
+    "doi": "10.1038/s41467-026-74357-6",
+    "title": "Hippocampo-neocortical interaction as compressive retrieval-augmented generation.",
+    "authorString": "Spens E, Burgess N.",
+    "pubYear": "2026",
+    "journalTitle": "Nat Commun",
+    "abstractText": "Memory systems interact during recall.",
+    "isOpenAccess": "N",
+}
+
+EUROPE_PMC_SEARCH = {
+    "resultList": {"result": [EUROPE_PMC_ARTICLE]},
+    "hitCount": 1,
+}
+
+EUROPE_PMC_FULLTEXT_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML">
+  <body>
+    <sec>
+      <title>Introduction</title>
+      <p>Attention is all you need.</p>
+      <p>Transformers changed NLP.</p>
+    </sec>
+  </body>
+</article>
+"""
 
 
 def _mock_get(mocker, response):
@@ -181,6 +213,92 @@ def test_openalex_fetch_404_returns_none(mocker):
     _mock_get(mocker, response)
 
     assert OpenAlexAdapter().fetch("W9999999999") is None
+
+
+def test_europepmc_search_parses_response(mocker):
+    response = mocker.MagicMock()
+    response.json.return_value = EUROPE_PMC_SEARCH
+    _mock_get(mocker, response)
+
+    candidates = EuropePMCAdapter().search("hippocampus", limit=1)
+    assert len(candidates) == 1
+    cand = candidates[0]
+    assert cand.title == "Hippocampo-neocortical interaction as compressive retrieval-augmented generation."
+    assert cand.authors == ["Spens E", "Burgess N."]
+    assert cand.external_id == "MED:42350398"
+    assert cand.source == "europepmc"
+    assert cand.published == "2026"
+    assert cand.summary == "Memory systems interact during recall."
+    assert cand.url == "https://europepmc.org/article/MED/42350398"
+
+
+def test_europepmc_fetch_by_source_id(mocker):
+    response = mocker.MagicMock()
+    response.json.return_value = EUROPE_PMC_SEARCH
+    mocked_get = _mock_get(mocker, response)
+
+    cand = EuropePMCAdapter().fetch("MED:42350398")
+    assert cand is not None
+    assert cand.external_id == "MED:42350398"
+    url = mocked_get.call_args[0][0]
+    assert url.endswith("/search")
+    assert mocked_get.call_args[1]["params"]["query"] == "EXT_ID:42350398"
+
+
+def test_europepmc_fetch_empty_returns_none(mocker):
+    response = mocker.MagicMock()
+    response.json.return_value = {"resultList": {"result": []}, "hitCount": 0}
+    _mock_get(mocker, response)
+
+    assert EuropePMCAdapter().fetch("MED:99999999") is None
+
+
+def test_europepmc_fetch_404_returns_none(mocker):
+    response = mocker.MagicMock()
+    response.status_code = 404
+    _mock_get(mocker, response)
+
+    assert EuropePMCAdapter().fetch("MED:99999999") is None
+
+
+def test_europepmc_fulltext_resolves_pmcid(mocker):
+    article_with_pmcid = {**EUROPE_PMC_ARTICLE, "pmcid": "PMC1234567"}
+    search_response = mocker.MagicMock()
+    search_response.status_code = 200
+    search_response.json.return_value = {"resultList": {"result": [article_with_pmcid]}}
+    xml_response = mocker.MagicMock()
+    xml_response.text = EUROPE_PMC_FULLTEXT_XML
+    mocked_get = mocker.patch.object(
+        httpx.Client,
+        "get",
+        side_effect=[search_response, xml_response],
+    )
+
+    text = EuropePMCAdapter().fetch_fulltext("MED:42350398")
+    assert text is not None
+    assert "Attention is all you need." in text
+    urls = [call.args[0] for call in mocked_get.call_args_list]
+    assert urls[1].endswith("/PMC/PMC1234567/fullTextXML")
+
+
+def test_europepmc_fulltext_direct_pmcid(mocker):
+    response = mocker.MagicMock()
+    response.text = EUROPE_PMC_FULLTEXT_XML
+    mocked_get = _mock_get(mocker, response)
+
+    text = EuropePMCAdapter().fetch_fulltext("PMC:1234567")
+    assert text is not None
+    assert "Transformers changed NLP." in text
+    url = mocked_get.call_args[0][0]
+    assert url.endswith("/PMC/1234567/fullTextXML")
+
+
+def test_europepmc_fulltext_no_open_access_returns_none(mocker):
+    response = mocker.MagicMock()
+    response.status_code = 404
+    _mock_get(mocker, response)
+
+    assert EuropePMCAdapter().fetch_fulltext("PMC:99999999") is None
 
 
 def test_parse_duckduckgo_html():

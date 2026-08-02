@@ -127,6 +127,8 @@ def paper_fetch(body: PaperFetchIn) -> CandidateOut:
         "semanticscholar": "backend.search.semantic_scholar.SemanticScholarAdapter",
         "oa": "backend.search.openalex.OpenAlexAdapter",
         "openalex": "backend.search.openalex.OpenAlexAdapter",
+        "epmc": "backend.search.europepmc.EuropePMCAdapter",
+        "europepmc": "backend.search.europepmc.EuropePMCAdapter",
     }
     if not sep or source not in adapters:
         raise HTTPException(status_code=400, detail="expected <arxiv|ss>:<id>")
@@ -165,6 +167,7 @@ def graph_gaps() -> list[str]:
 def search(body: SearchIn) -> list[CandidateOut]:
     from backend.search.arxiv import ArxivAdapter
     from backend.search.duckduckgo import DuckDuckGoAdapter
+    from backend.search.europepmc import EuropePMCAdapter
     from backend.search.openalex import OpenAlexAdapter
     from backend.search.semantic_scholar import SemanticScholarAdapter
 
@@ -174,6 +177,7 @@ def search(body: SearchIn) -> list[CandidateOut]:
         ArxivAdapter(),
         OpenAlexAdapter(),
         SemanticScholarAdapter(),
+        EuropePMCAdapter(),
         DuckDuckGoAdapter(),
     ):
         try:

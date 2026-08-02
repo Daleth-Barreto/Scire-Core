@@ -28,6 +28,8 @@ CLI:
 uv run scire chat "what is a knowledge graph?"
 uv run scire search "retrieval augmented generation"
 uv run scire paper fetch oa:W4389984066
+uv run scire paper fetch epmc:41547989
+uv run scire paper fulltext epmc:PMC12921246
 uv run scire repo add psf/requests && uv run scire repo ask psf/requests "how does X work?"
 uv run scire ingest pdf paper.pdf
 uv run scire shell            # interactive REPL

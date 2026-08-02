@@ -89,6 +89,7 @@ Tracked here on purpose. Update this list when a limitation is discovered or res
 - [ ] OmniRoute (local gateway) can return HTTP 429 on `/v1/embeddings` or chat under load — optional LLM/embedding steps degrade to un-embedded nodes instead of aborting.
 - [x] Node deduplication: papers dedupe by (source, external_id), authors by title, repo re-indexing is idempotent (repo/files/chunks). Limitation resolved 2026-07-31; cross-source dedup (same paper in arXiv vs web) and cleanup of pre-fix duplicates still pending.
 - [ ] Semantic Scholar API without a key is rate-limited (HTTP 429) — `scire search` degrades gracefully and returns arXiv + OpenAlex + DuckDuckGo results. OpenAlex (added 2026-08-02) is the keyless fallback for paper metadata.
+- [ ] Europe PMC (added 2026-08-02) — search/fetch work keyless via `EXT_ID:`/`PMCID:` search; the `fullTextXML` endpoint has been returning 404 for all IDs (observed 2026-08-02, even for the docs' own example), so `scire paper fulltext epmc:<id>` reports "fulltext not available" until the service recovers.
 - [ ] DuckDuckGo web adapter scrapes `duckduckgo.com/html/` HTML — no API key, but the HTML layout can change and the endpoint may 302/429 or serve a CAPTCHA; it is best-effort, not a hard SLA.
 - [ ] GitHub API without a token is rate-limited (60 req/hr) — `scire repo add` works for small repos; set `GITHUB_TOKEN` in `.env` to index large ones.
 - [ ] No caching layer for repeated search/LLM calls.
@@ -105,7 +106,7 @@ These must pass before any merge. Extend the list as the project grows.
 - [x] `test_graph_crud.py` — node upsert, edge upsert, neighbor queries.
 - [x] `test_graph_search.py` — vector search returns nearest neighbors; empty graph returns empty result.
 - [x] `test_ingest.py` — PDF fixture → text → chunks; entities extracted with mocked LLM; re-ingest dedupes authors/concepts/claims by title.
-- [x] `test_search_adapters.py` — arXiv + OpenAlex + Semantic Scholar + DuckDuckGo (web) adapters parse mocked responses into candidate nodes.
+- [x] `test_search_adapters.py` — arXiv + OpenAlex + Semantic Scholar + Europe PMC + DuckDuckGo (web) adapters parse mocked responses into candidate nodes; Europe PMC fulltext XML parsing.
 - [x] `test_repos.py` — mocked GitHub API: repo tree → subgraph; Q&A returns cited answer.
 - [x] `test_memory.py` — user note persisted as node tied to context; actions logged as edges.
 - [x] `test_config.py` — API keys never logged/serialized into graph.

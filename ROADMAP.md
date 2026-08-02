@@ -9,6 +9,7 @@
 | First interface | CLI |
 | Database | PostgreSQL + pgvector |
 | LLM | Multi-provider, user-supplied API keys, OpenRouter-compatible; dev machine uses OmniRoute (local gateway, `localhost:20128/v1`) |
+| Desktop (future) | Tauri (Rust shell + existing React frontend) — evaluate alternatives (Electron, Wails) when we get there; depends on the web stack we keep |
 | Repo state | `C:\scire` — greenfield, start from scratch |
 
 ## Architecture (target)
@@ -65,6 +66,8 @@ Key interfaces:
 ### Phase 4 — Search & discovery
 - [x] Web search adapter — DuckDuckGo HTML scraping, no API key needed (`backend/search/duckduckgo.py`; shown as `(web)` results; Tavily/Exa/SERPer swap-in later if user wants).
 - [x] Academic adapters: arXiv API (free, no key), Semantic Scholar API.
+- [x] OpenAlex adapter (keyless paper metadata + citations; `backend/search/openalex.py`, keys `oa`/`openalex`).
+- [x] Europe PMC adapter (keyless biomedical metadata + full text for open access; `backend/search/europepmc.py`, keys `epmc`/`europepmc`; `scire paper fulltext epmc:<id>` ingests full text into the graph).
 - [x] Results become candidate nodes; user confirms to persist them.
 - [x] CLI: `scire search "topic"`, `scire paper fetch arxiv:2301.00000`.
 
@@ -93,6 +96,18 @@ Key interfaces:
 - [x] API-key settings UI that writes keys (`scire config set` remains the CLI way), plus encrypt-at-rest with a user passphrase.
 - [x] PDF ingest behind the API (`POST /api/ingest/pdf` + "Ingest" tab in the UI); pipeline dedupes authors/concepts/claims by title on re-ingest.
 - [x] `paper fetch` behind the API (`POST /api/papers/fetch`, persists by default, UI input in the Search tab).
+
+## Next phases (planned)
+
+### Phase 9 — Research workflows (sire rank & beyond)
+- [ ] `scire rank <topic>` — PaperRank-style scoring over the graph (citations, recency, hub authors), inspired by feynman's `rank`.
+- [ ] `scire audit <paper> <repo>` — compare a paper's claims against a codebase (combines paper fetch + repo analysis).
+- [ ] `scire deepresearch <topic>` — multi-agent pipeline (researcher → reviewer → writer → verifier) with cited briefs.
+
+### Phase 10 — Install & UX (opencode-level DX)
+- [ ] One-command install (standalone binary / `pipx` / installer script), no manual Postgres setup (embedded or bundled defaults).
+- [ ] `scire init` wizard: create DB, write `.env`, set keys — zero manual steps.
+- [ ] Desktop app via Tauri (Rust + React frontend) — see Decisions; evaluate alternatives when we get there.
 
 ## Validation strategy
 - pytest for unit/integration (mocked network), a `tests/` dir grows with each phase.

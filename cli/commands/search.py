@@ -1,11 +1,16 @@
+import tempfile
+from pathlib import Path
+
 import httpx
 import typer
 
 from backend.graph.db import session_scope
 from backend.graph.store import GraphStore
+from backend.ingest.pipeline import IngestPipeline
 from backend.search.arxiv import ArxivAdapter
 from backend.search.base import CandidateNode, SearchAdapter
 from backend.search.duckduckgo import DuckDuckGoAdapter
+from backend.search.europepmc import EuropePMCAdapter
 from backend.search.openalex import OpenAlexAdapter
 from backend.search.semantic_scholar import SemanticScholarAdapter
 
@@ -17,11 +22,19 @@ FETCH_ADAPTERS: dict[str, type[SearchAdapter]] = {
     "semanticscholar": SemanticScholarAdapter,
     "oa": OpenAlexAdapter,
     "openalex": OpenAlexAdapter,
+    "epmc": EuropePMCAdapter,
+    "europepmc": EuropePMCAdapter,
 }
 
 
 def _search_adapters() -> list[SearchAdapter]:
-    return [ArxivAdapter(), OpenAlexAdapter(), SemanticScholarAdapter(), DuckDuckGoAdapter()]
+    return [
+        ArxivAdapter(),
+        OpenAlexAdapter(),
+        SemanticScholarAdapter(),
+        EuropePMCAdapter(),
+        DuckDuckGoAdapter(),
+    ]
 
 
 def _persist(store: GraphStore, candidates: list[CandidateNode], action: str = "persist") -> None:
@@ -102,3 +115,38 @@ def fetch_cmd(
     if persist:
         with session_scope() as session:
             _persist(GraphStore(session), [candidate], action="fetch")
+
+
+@paper_app.command("fulltext")
+def fulltext_cmd(
+    external_id: str,
+    persist: bool = typer.Option(True, "--persist/--no-persist"),
+) -> None:
+    source, sep, value = external_id.partition(":")
+    if not sep or source not in FETCH_ADAPTERS:
+        raise typer.BadParameter("expected format <arxiv|ss|oa|epmc>:<id>")
+    adapter_cls = FETCH_ADAPTERS[source]
+    adapter = adapter_cls()  # type: ignore[operator]
+    try:
+        text = adapter.fetch_fulltext(value)  # type: ignore[attr-defined]
+    except AttributeError:
+        raise typer.BadParameter(f"source {source} has no fulltext endpoint")
+    except httpx.HTTPError as exc:
+        raise typer.BadParameter(f"fetch failed: {exc}") from exc
+    if text is None or not text.strip():
+        typer.echo("fulltext not available (open access required)")
+        raise typer.Exit()
+    if not persist:
+        typer.echo(text[:2000])
+        return
+    tmp = Path(tempfile.mktemp(suffix=".txt"))
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        with session_scope() as session:
+            counts = IngestPipeline(GraphStore(session)).ingest(tmp)
+        typer.echo(
+            f"ingested {counts['chunks']} chunks, {counts['authors']} authors, "
+            f"{counts['concepts']} concepts, {counts['claims']} claims"
+        )
+    finally:
+        tmp.unlink(missing_ok=True)

@@ -4,7 +4,10 @@ import pytest
 from typer.testing import CliRunner
 
 from backend.core.config import get_settings
+from backend.graph.db import session_scope
+from cli.commands.search import FETCH_ADAPTERS
 from cli.main import app
+from tests.conftest import TEST_DB_URL, make_embed
 
 runner = CliRunner()
 
@@ -55,3 +58,64 @@ def test_smoke_real_llm_call():
     result = runner.invoke(app, ["chat", "say: ok"])
     assert result.exit_code == 0
     assert result.output.strip()
+
+
+def test_fulltext_prints_text_without_persist(monkeypatch):
+    class FakeAdapter:
+        def __init__(self) -> None:
+            pass
+
+        def fetch_fulltext(self, value: str) -> str:
+            return "Attention is all you need."
+
+    monkeypatch.setitem(FETCH_ADAPTERS, "epmc", FakeAdapter)
+    result = runner.invoke(app, ["paper", "fulltext", "epmc:MED:1", "--no-persist"])
+    assert result.exit_code == 0
+    assert "Attention is all you need." in result.output
+
+
+def test_fulltext_unavailable_reports_open_access(monkeypatch):
+    class FakeAdapter:
+        def __init__(self) -> None:
+            pass
+
+        def fetch_fulltext(self, value: str) -> None:
+            return None
+
+    monkeypatch.setitem(FETCH_ADAPTERS, "epmc", FakeAdapter)
+    result = runner.invoke(app, ["paper", "fulltext", "epmc:MED:1", "--no-persist"])
+    assert result.exit_code == 0
+    assert "fulltext not available" in result.output
+
+
+def test_fulltext_bad_source():
+    result = runner.invoke(app, ["paper", "fulltext", "arxiv:1706.03762"])
+    assert result.exit_code == 2
+    assert "no fulltext endpoint" in result.output
+
+
+def test_fulltext_persists_to_graph(session, mocker, monkeypatch):
+    class FakeAdapter:
+        def __init__(self) -> None:
+            pass
+
+        def fetch_fulltext(self, value: str) -> str:
+            return "Graph neural networks generalize deep learning to graphs. " * 200
+
+    monkeypatch.setitem(FETCH_ADAPTERS, "epmc", FakeAdapter)
+    monkeypatch.setattr(
+        "cli.commands.search.session_scope", lambda: session_scope(TEST_DB_URL)
+    )
+    fake_provider = mocker.MagicMock()
+    fake_provider.chat.return_value = (
+        '{"authors": ["Jane Doe"], "concepts": ["graph neural networks"], "claims": []}'
+    )
+    mocker.patch("backend.ingest.pipeline.get_provider", return_value=fake_provider)
+    fake_embedder = mocker.MagicMock()
+    fake_embedder.embed.return_value = [make_embed(0)]
+    mocker.patch("backend.ingest.pipeline.get_embedder", return_value=fake_embedder)
+
+    result = runner.invoke(app, ["paper", "fulltext", "epmc:MED:1"])
+    assert result.exit_code == 0
+    assert "ingested" in result.output
+    assert "chunks" in result.output

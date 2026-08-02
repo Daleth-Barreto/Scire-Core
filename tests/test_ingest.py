@@ -28,6 +28,13 @@ def test_extract_text(tmp_path):
     assert "Transformers use self-attention." in text
 
 
+def test_extract_text_txt(tmp_path):
+    path = tmp_path / "note.txt"
+    path.write_text("Plain text body", encoding="utf-8")
+
+    assert extract_text(path) == "Plain text body"
+
+
 def test_chunk_text_splits_long_paragraphs():
     long_para = "x" * 5000
     chunks = chunk_text(long_para, max_chars=2000)
