@@ -53,6 +53,7 @@ def persist_candidates(
                     "url": candidate.url,
                     "authors": candidate.authors,
                     "published": candidate.published,
+                    "cited_by_count": candidate.cited_by_count,
                 },
             )
             counts["papers"] += 1

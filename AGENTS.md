@@ -105,6 +105,7 @@ These must pass before any merge. Extend the list as the project grows.
 - [x] `test_openrouter.py` — request body matches OpenAI-compatible schema; key passed via header, not logged.
 - [x] `test_graph_crud.py` — node upsert, edge upsert, neighbor queries.
 - [x] `test_graph_search.py` — vector search returns nearest neighbors; empty graph returns empty result.
+- [x] `test_graph_rank.py` — PaperRank scores papers by relevance + citations (edges and OpenAlex `cited_by_count`) + method evidence (repo/claim/hypothesis neighbors) + provenance weight.
 - [x] `test_ingest.py` — PDF fixture → text → chunks; entities extracted with mocked LLM; re-ingest dedupes authors/concepts/claims by title.
 - [x] `test_search_adapters.py` — arXiv + OpenAlex + Semantic Scholar + Europe PMC + DuckDuckGo (web) adapters parse mocked responses into candidate nodes; Europe PMC fulltext XML parsing.
 - [x] `test_repos.py` — mocked GitHub API: repo tree → subgraph; Q&A returns cited answer.

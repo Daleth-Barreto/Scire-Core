@@ -100,7 +100,7 @@ Key interfaces:
 ## Next phases (planned)
 
 ### Phase 9 — Research workflows (sire rank & beyond)
-- [ ] `scire rank <topic>` — PaperRank-style scoring over the graph (citations, recency, hub authors), inspired by feynman's `rank`.
+- [x] `scire rank <topic>` — PaperRank-style scoring over the graph (citations, recency, hub authors), inspired by feynman's `rank`. Implemented 2026-08-02: relevance + citations (edges + OpenAlex `cited_by_count`) + method evidence (repo/claim/hypothesis) + provenance.
 - [ ] `scire audit <paper> <repo>` — compare a paper's claims against a codebase (combines paper fetch + repo analysis).
 - [ ] `scire deepresearch <topic>` — multi-agent pipeline (researcher → reviewer → writer → verifier) with cited briefs.
 

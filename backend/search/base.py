@@ -11,6 +11,7 @@ class CandidateNode(BaseModel):
     external_id: str
     summary: str = ""
     published: str | None = None
+    cited_by_count: int = 0
 
 
 class SearchAdapter(ABC):

@@ -33,6 +33,7 @@ def _from_work(work: dict[str, Any]) -> CandidateNode:
         external_id=external_id,
         summary=_reconstruct_abstract(work.get("abstract_inverted_index")),
         published=work.get("publication_date"),
+        cited_by_count=int(work.get("cited_by_count") or 0),
     )
 
 

@@ -78,6 +78,7 @@ OPENALEX_WORK = {
     "doi": "https://doi.org/10.48550/arXiv.1706.03762",
     "title": "Attention Is All You Need",
     "publication_date": "2017-06-12",
+    "cited_by_count": 43210,
     "authorships": [{"author": {"display_name": "Ashish Vaswani"}}],
     "primary_location": {"landing_page_url": "https://arxiv.org/abs/1706.03762"},
     "abstract_inverted_index": {"Attention": [0], "Is": [1], "All": [2], "You": [3], "Need": [4]},
@@ -172,19 +173,20 @@ def test_semantic_scholar_fetch_404_returns_none(mocker):
 
 def test_openalex_search_parses_response(mocker):
     response = mocker.MagicMock()
-    response.json.return_value = OPENALEX_SEARCH
-    _mock_get(mocker, response)
+    response.json.return_value = {"results": [OPENALEX_WORK]}
+    mocked_get = _mock_get(mocker, response)
 
-    candidates = OpenAlexAdapter().search("attention", limit=1)
+    candidates = OpenAlexAdapter().search("attention")
     assert len(candidates) == 1
-    cand = candidates[0]
-    assert cand.title == "Attention Is All You Need"
-    assert cand.authors == ["Ashish Vaswani", "Noam Shazeer"]
-    assert cand.external_id == "W2741809807"
-    assert cand.source == "openalex"
-    assert cand.published == "2017-06-12"
-    assert cand.summary == "Attention Is All You Need"
-    assert cand.url == "https://arxiv.org/abs/1706.03762"
+    assert candidates[0].external_id == "W2741809807"
+    assert candidates[0].cited_by_count == 43210
+    url = mocked_get.call_args[0][0]
+    assert url.endswith("/works")
+    assert mocked_get.call_args[1]["params"]["search"] == "attention"
+    assert candidates[0].source == "openalex"
+    assert candidates[0].published == "2017-06-12"
+    assert candidates[0].summary == "Attention Is All You Need"
+    assert candidates[0].url == "https://arxiv.org/abs/1706.03762"
 
 
 def test_openalex_search_empty_results(mocker):

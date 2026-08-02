@@ -7,6 +7,7 @@ from cli.commands.config import config_app
 from cli.commands.graph import edge_app, graph_app, node_app
 from cli.commands.ingest import ingest_app
 from cli.commands.notes import note_app
+from cli.commands.rank import rank_cmd
 from cli.commands.repos import repo_app
 from cli.commands.search import paper_app, search_cmd
 from cli.commands.shell import shell_cmd
@@ -15,6 +16,7 @@ app = typer.Typer(name="scire", help="AI research copilot.")
 
 app.command("search")(search_cmd)
 app.command("shell")(shell_cmd)
+app.command("rank")(rank_cmd)
 app.add_typer(config_app, name="config")
 app.add_typer(note_app, name="note")
 app.add_typer(node_app, name="node")

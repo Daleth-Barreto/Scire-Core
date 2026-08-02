@@ -48,6 +48,41 @@ def test_chat_returns_reply(monkeypatch):
     assert result.output.strip() == "hola humano"
 
 
+def test_rank_prints_scored_papers(session, mocker, monkeypatch):
+    from backend.graph.store import GraphStore
+
+    store = GraphStore(session)
+    node = store.upsert_node(
+        type="paper",
+        title="Attention Is All You Need",
+        embedding=make_embed(0),
+        properties={"source": "arxiv", "external_id": "T:attention", "cited_by_count": 100},
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        "cli.commands.rank.session_scope", lambda: session_scope(TEST_DB_URL)
+    )
+    fake_embedder = mocker.MagicMock()
+    fake_embedder.embed.return_value = [make_embed(0)]
+    mocker.patch("cli.commands.rank.get_embedder", return_value=fake_embedder)
+
+    result = runner.invoke(app, ["rank", "attention"])
+    assert result.exit_code == 0
+    assert "Attention Is All You Need" in result.output
+    assert node.id
+
+
+def test_rank_no_embedder_prints_error(monkeypatch):
+    def no_embedder(*args, **kwargs):
+        raise ValueError("embedding model not configured")
+
+    monkeypatch.setattr("cli.commands.rank.get_embedder", no_embedder)
+    result = runner.invoke(app, ["rank", "attention"])
+    assert result.exit_code == 2
+    assert "cannot embed query" in result.output
+
+
 def test_smoke_real_llm_call():
     if os.environ.get("SCIRE_CI") == "1":
         raise pytest.skip("no real LLM call in CI")
