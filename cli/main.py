@@ -8,6 +8,7 @@ from cli.commands.config import config_app
 from cli.commands.deepresearch import deepresearch_cmd
 from cli.commands.graph import edge_app, graph_app, node_app
 from cli.commands.ingest import ingest_app
+from cli.commands.init import init_cmd
 from cli.commands.notes import note_app
 from cli.commands.rank import rank_cmd
 from cli.commands.repos import repo_app
@@ -21,6 +22,7 @@ app.command("shell")(shell_cmd)
 app.command("rank")(rank_cmd)
 app.command("audit")(audit_cmd)
 app.command("deepresearch")(deepresearch_cmd)
+app.command("init")(init_cmd)
 app.add_typer(config_app, name="config")
 app.add_typer(note_app, name="note")
 app.add_typer(node_app, name="node")

@@ -113,6 +113,7 @@ These must pass before any merge. Extend the list as the project grows.
 - [x] `test_repos.py` — mocked GitHub API: repo tree → subgraph; Q&A returns cited answer.
 - [x] `test_audit.py` — paper claims vs repo chunks: LLM verdicts (supported/refuted/not-evidenced) with `path:line` evidence; missing paper/claims/repo errors.
 - [x] `test_deepresearch.py` — multi-agent pipeline: researcher synthesizes real sources → writer briefs with `[n]` citations → verifier flags unsupported claims; degrades on HTTP errors and unparseable output.
+- [x] `test_init.py` — `scire init` wizard: `.env` from `.env.example` (no overwrite), role/DB/pgvector creation via admin URL (psycopg, detects existing), table readiness.
 - [x] `test_memory.py` — user note persisted as node tied to context; actions logged as edges.
 - [x] `test_config.py` — API keys never logged/serialized into graph.
 - [x] `test_secrets.py` — encrypted key store: roundtrip, wrong passphrase, tampered/missing file, no plaintext on disk, parent dir creation.

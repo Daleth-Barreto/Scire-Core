@@ -140,6 +140,20 @@ def test_deepresearch_no_sources_prints_error(mocker):
     assert "no sources found" in result.output
 
 
+def test_init_prints_summary(mocker, monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    mocker.patch("backend.setup.init._ensure_database", return_value=("created", "created", "created"))
+    mocker.patch("backend.setup.init._create_tables")
+    mocker.patch("backend.setup.init._graph_ready", return_value=True)
+    (tmp_path / ".env.example").write_text("LLM_PROVIDER=openrouter\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["init", "--admin-url", "postgresql+psycopg://postgres:pw@localhost:5432/postgres"], prog_name="scire")
+    assert result.exit_code == 0
+    assert ".env created" in result.output
+    assert "database role: created" in result.output
+    assert "tables ready" in result.output
+
+
 def test_rank_prints_scored_papers(session, mocker, monkeypatch):
     from backend.graph.store import GraphStore
 

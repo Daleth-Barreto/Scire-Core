@@ -105,9 +105,9 @@ Key interfaces:
 - [x] `scire deepresearch <topic>` — multi-agent pipeline (researcher → writer → verifier) with cited briefs. Implemented 2026-08-02: real sources from arXiv/OpenAlex/Europe PMC, numbered `[n]` citations, verifier flags unsupported claims (`backend/research/deepresearch.py`).
 
 ### Phase 10 — Install & UX (opencode-level DX)
-- [ ] One-command install (standalone binary / `pipx` / installer script), no manual Postgres setup (embedded or bundled defaults).
-- [ ] `scire init` wizard: create DB, write `.env`, set keys — zero manual steps.
-- [ ] Desktop app via Tauri (Rust + React frontend) — see Decisions; evaluate alternatives when we get there.
+- [x] `scire init` wizard — one command: creates `.env` from `.env.example`, auto-creates role/DB/pgvector via `--admin-url`, creates tables, reports status (`backend/setup/init.py`, CLI `scire init`). Implemented 2026-08-02.
+- [x] One-command install — `scripts/install.sh` (Linux/macOS/git-bash) + `scripts/install.ps1` (Windows): `uv sync` + `scire init`.
+- [ ] Desktop app via Tauri — **blocked on toolchain**: no Rust/cargo on the dev machine (verified 2026-08-02); plan documented in Decisions. Revisit after installing Rust (rustup) + the Tauri prerequisites (WebView2 on Windows).
 
 ## Validation strategy
 - pytest for unit/integration (mocked network), a `tests/` dir grows with each phase.

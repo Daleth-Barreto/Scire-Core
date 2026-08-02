@@ -17,9 +17,10 @@ An AI research copilot that builds a living knowledge graph (papers, authors, hy
 
 ```bash
 uv sync                      # install deps
-cp .env.example .env         # fill in your keys
-uv run uvicorn backend.api.main:app --reload   # backend on :8000
-cd frontend && npm install && npm run dev      # UI on :5173 (proxies /api)
+uv run scire init --admin-url "postgresql+psycopg://postgres:YOUR_PASSWORD@localhost:5432/postgres"
+#   - creates .env from .env.example, auto-creates role/DB/pgvector, creates tables
+# one-command alternative: bash scripts/install.sh   (PowerShell: scripts\install.ps1)
+uv run scire whoami          # check provider/key status
 ```
 
 CLI:
@@ -41,7 +42,7 @@ uv run scire shell            # interactive REPL
 ## Tests
 
 ```bash
-uv run pytest        # 75+ tests, network/LLM mocked
+uv run pytest               # 127+ tests, network/LLM mocked
 uv run ruff check . && uv run mypy backend cli
 ```
 
