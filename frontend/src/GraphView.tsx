@@ -25,10 +25,29 @@ const TYPE_COLORS: Record<string, string> = {
   action: '#9ca3af',
 }
 
+const TYPE_NAMES: Record<string, string> = {
+  paper: 'Paper',
+  author: 'Author',
+  concept: 'Concept',
+  hypothesis: 'Hypothesis',
+  repo: 'Repository',
+  file: 'File',
+  chunk: 'Chunk',
+  note: 'Note',
+  claim: 'Claim',
+  action: 'Action',
+}
+
+function typeName(type: string): string {
+  return TYPE_NAMES[type] ?? type
+}
+
 function ScireNode({ data, selected }: NodeProps) {
   const isHypothesis = data.type === 'hypothesis'
+  const label = typeName(String(data.type))
   return (
     <div
+      title={`${label} node — click for details`}
       style={{
         border: `2px ${isHypothesis ? 'dashed' : 'solid'} ${selected ? '#000' : String(data.color)}`,
         background: isHypothesis ? '#fdf2f8' : '#fff',
@@ -40,7 +59,7 @@ function ScireNode({ data, selected }: NodeProps) {
       }}
     >
       <div style={{ fontWeight: 600, color: String(data.color), textTransform: 'uppercase', fontSize: 10 }}>
-        {String(data.type)}
+        {label}
       </div>
       <div>{String(data.label)}</div>
     </div>
@@ -75,6 +94,7 @@ export default function GraphView() {
   const [gaps, setGaps] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     try {
@@ -93,6 +113,8 @@ export default function GraphView() {
       setError('')
     } catch (err) {
       setError((err as Error).message)
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -123,7 +145,7 @@ export default function GraphView() {
 
   return (
     <div className="graph-layout">
-      <div style={{ height: 'calc(100vh - 120px)', flex: 1 }}>
+      <div style={{ position: 'relative', height: 'calc(100vh - 120px)', flex: 1 }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -135,12 +157,43 @@ export default function GraphView() {
           <Controls />
           <MiniMap nodeColor={(n) => (n.data?.color as string) ?? '#999'} />
         </ReactFlow>
+        {!loading && nodes.length === 0 && !error && (
+          <div className="empty-state">
+            <h3>Welcome to your knowledge graph</h3>
+            <p className="muted">
+              Your papers, authors, repos, and notes will appear here as connected nodes.
+            </p>
+            <ol>
+              <li>
+                <strong>Search tab:</strong> find papers on a topic and save them
+              </li>
+              <li>
+                <strong>Repo tab:</strong> index a GitHub repo
+              </li>
+              <li>
+                <strong>Come back here</strong> to explore the graph
+              </li>
+            </ol>
+          </div>
+        )}
       </div>
       <aside className="sidebar">
+        <h3>Legend</h3>
+        <ul className="legend">
+          {Object.keys(TYPE_COLORS).map((type) => (
+            <li key={type} className="legend-item">
+              <span className="legend-swatch" style={{ background: TYPE_COLORS[type] }} />
+              {typeName(type)}
+            </li>
+          ))}
+        </ul>
+
         <h3>Gaps &amp; hypotheses</h3>
+        <p className="muted helper">Unexplored links the AI noticed between your papers.</p>
         <button onClick={() => void onDetectGaps()} disabled={busy} className="wide">
           {busy ? 'detecting…' : 'Detect gaps'}
         </button>
+        <p className="muted helper">Scan your graph for research directions you might have missed.</p>
         {gaps.length === 0 && !busy && <p className="muted">No hypotheses yet.</p>}
         <ul className="plain gaps">
           {gaps.map((gap) => (

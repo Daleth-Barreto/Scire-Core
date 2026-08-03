@@ -26,6 +26,10 @@ export default function IngestView() {
   return (
     <div className="panel">
       <h2>PDF ingestion</h2>
+      <p className="muted helper">
+        Add a paper to your knowledge graph from a PDF. Scire extracts the text, splits it into
+        chunks, and finds the authors, concepts, and claims — all linked to the paper.
+      </p>
       <div className="row">
         <input
           ref={inputRef}
@@ -48,15 +52,15 @@ export default function IngestView() {
           {busy ? 'ingesting…' : 'Ingest'}
         </button>
       </div>
+      <p className="muted helper">
+        After uploading, check the Graph tab to see the paper and everything extracted from it.
+      </p>
       {error && <p className="error">{error}</p>}
       {counts && (
-        <pre className="answer">
-          {`paper: ${counts.paper_id}
-chunks: ${counts.chunks}
-authors: ${counts.authors}
-concepts: ${counts.concepts}
-claims: ${counts.claims}`}
-        </pre>
+        <p className="ok">
+          Ingested {counts.chunks} chunks and found {counts.authors} authors, {counts.concepts}{' '}
+          concepts, and {counts.claims} claims.
+        </p>
       )}
     </div>
   )

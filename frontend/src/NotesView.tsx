@@ -39,6 +39,7 @@ export default function NotesView() {
   return (
     <div className="panel">
       <h2>Notes</h2>
+      <p className="muted helper">Thoughts you save here become nodes in your graph.</p>
       <div className="row">
         <input
           value={content}

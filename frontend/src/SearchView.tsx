@@ -40,7 +40,16 @@ export default function SearchView() {
 
   return (
     <div className="panel">
-      <h2>Web search</h2>
+      <h2>Search</h2>
+      <p className="muted helper">
+        Find papers on a topic, or add a specific paper to your graph by its ID.
+      </p>
+
+      <h3>Search the web &amp; academia</h3>
+      <p className="muted helper">
+        Look for papers across academic sources and the web. Checking the box saves the results to
+        your knowledge graph as you go.
+      </p>
       <div className="row">
         <input
           value={query}
@@ -62,23 +71,28 @@ export default function SearchView() {
       </div>
       <label className="row">
         <input type="checkbox" checked={persist} onChange={(e) => setPersist(e.target.checked)} />
-        persist results into the graph
+        save results to my knowledge graph
       </label>
 
       {error && <p className="error">{error}</p>}
 
-      <h3>Fetch paper by ID</h3>
+      <h3>Fetch a specific paper by ID</h3>
+      <p className="muted helper">
+        If you already know the paper you want, fetch it by ID — it is saved to your knowledge
+        graph automatically.
+      </p>
       <div className="row">
         <input
           value={externalId}
           onChange={(e) => setExternalId(e.target.value)}
-          placeholder="arxiv:2301.00000 or ss:... (persists into the graph)"
+          placeholder="paper ID, e.g. arxiv:2301.00000"
           onKeyDown={(e) => e.key === 'Enter' && void onFetch()}
         />
         <button onClick={() => void onFetch()} disabled={fetchBusy}>
           {fetchBusy ? 'fetching…' : 'Fetch'}
         </button>
       </div>
+      <p className="muted helper">Accepted prefixes: arxiv:, epmc:, ss:, oa:</p>
       {fetched && (
         <li className="result-item">
           <span className="tag">{fetched.source}</span>

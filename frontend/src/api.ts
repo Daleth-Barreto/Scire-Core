@@ -55,7 +55,17 @@ export interface NodeDetail {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const base = import.meta.env.DEV ? '' : 'http://127.0.0.1:8000'
-  const response = await fetch(`${base}${path}`, init)
+  let response: Response
+  try {
+    response = await fetch(`${base}${path}`, init)
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error(
+        `${(err as Error).message} (is the backend running? try: uv run uvicorn backend.api.main:app)`,
+      )
+    }
+    throw err
+  }
   if (!response.ok) {
     let detail = response.statusText
     try {

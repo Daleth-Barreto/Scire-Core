@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { addRepo, askRepo } from './api'
 
 export default function RepoView() {
-  const [ownerRepo, setOwnerRepo] = useState('psf/requests')
+  const [ownerRepo, setOwnerRepo] = useState('')
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState('')
   const [busy, setBusy] = useState<'add' | 'ask' | null>(null)
@@ -46,16 +46,29 @@ export default function RepoView() {
   return (
     <div className="panel">
       <h2>Repository analysis</h2>
+      <p className="muted helper">
+        Analyze any GitHub repo: index it first, then ask questions about its code.
+      </p>
+
+      <h3>1. Index a repo</h3>
+      <p className="muted helper">
+        Scire reads the repo and stores its files in your knowledge graph. Do this once per repo.
+      </p>
       <div className="row">
         <input
           value={ownerRepo}
           onChange={(e) => setOwnerRepo(e.target.value)}
-          placeholder="owner/repo"
+          placeholder="owner/repo, e.g. psf/requests"
         />
         <button onClick={() => void onAdd()} disabled={busy === 'add'}>
           {busy === 'add' ? 'indexing…' : 'Index repo'}
         </button>
       </div>
+
+      <h3>2. Ask about the code</h3>
+      <p className="muted helper">
+        Once indexed, ask anything about how the repo works.
+      </p>
       <div className="row">
         <input
           value={question}

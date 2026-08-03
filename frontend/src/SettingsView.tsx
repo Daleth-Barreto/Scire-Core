@@ -88,8 +88,12 @@ export default function SettingsView() {
 
       <h3>Encrypted key store</h3>
       <p className="muted">
-        Keys are encrypted at rest with your passphrase (never stored). Empty fields are skipped
-        when saving. Losing the passphrase makes the stored keys unrecoverable.
+        Your passphrase encrypts the keys when they are saved to disk — it is never stored, so
+        losing it makes the stored keys unrecoverable. Empty fields are skipped when saving.
+      </p>
+      <p className="muted">
+        Save = write keys to disk, Unlock = make them available for this session, Lock = forget
+        them in memory.
       </p>
       <label className="field">
         <span>Passphrase</span>
