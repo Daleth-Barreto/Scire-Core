@@ -110,7 +110,7 @@ Key interfaces:
 - [x] Schema versioning — Alembic migrations (`backend/graph/migrations/`, revision `322751a0bb42` "initial schema"); `scire init` runs `upgrade head` (fresh DB) or `stamp head` (existing tables). Added 2026-08-02.
 - [x] Global install — `uv build` + `uv tool install` (or `pipx install .`) ships a `scire` executable; verified 2026-08-02.
 - [x] Repeated-query caching — in-process TTL cache on search adapters (`backend/core/cache.py`, 300s TTL); added 2026-08-02.
-- [ ] Desktop app via Tauri — **blocked on toolchain**: no Rust/cargo on the dev machine (verified 2026-08-02); plan documented in Decisions. Revisit after installing Rust (rustup) + the Tauri prerequisites (WebView2 on Windows). The global-install path above is the current substitute.
+- [x] Desktop app via Tauri — `frontend/src-tauri/` (Rust shell over the React UI; `npm run tauri dev` for dev, `npx tauri build` for installers). Implemented 2026-08-02 after installing Rust (rustup, stable 1.97) + VS Build Tools 2022 (VCTools workload) + WebView2 (already present). CORS for the `tauri.localhost` origin added to the API; the packaged app calls the backend at `http://127.0.0.1:8000` (dev keeps the Vite proxy). Prereq for the API in the packaged app: run `uv run uvicorn backend.api.main:app` first.
 
 ## Validation strategy
 - pytest for unit/integration (mocked network), a `tests/` dir grows with each phase.

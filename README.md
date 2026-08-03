@@ -37,6 +37,8 @@ uv run scire audit "Attention Paper" psf/requests    # paper claims vs repo code
 uv run scire deepresearch "retrieval augmented generation"   # multi-agent cited brief
 uv run scire ingest pdf paper.pdf
 uv run scire shell            # interactive REPL
+uv run uvicorn backend.api.main:app --reload   # API server (http://localhost:8000/docs)
+cd frontend && npm run tauri dev                # desktop app (dev)
 ```
 
 Global install (alternative to the repo checkout):
