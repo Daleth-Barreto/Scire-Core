@@ -124,7 +124,7 @@ These must pass before any merge. Extend the list as the project grows.
 - [x] `test_memory.py` — user note persisted as node tied to context; actions logged as edges.
 - [x] `test_config.py` — API keys never logged/serialized into graph.
 - [x] `test_secrets.py` — encrypted key store: roundtrip, wrong passphrase, tampered/missing file, no plaintext on disk, parent dir creation.
-- [x] `test_api.py` — FastAPI: graph dump/detail/search, web search adapter merge, paper fetch, PDF upload ingest, notes roundtrip, masked config, config keys write/unlock/lock (keys never returned), chat action logging (TestClient against `scire_test`).
+- [x] `test_api.py` — FastAPI: graph dump/detail/search, web search adapter merge, paper fetch, PDF upload ingest, notes roundtrip, masked config, config keys write/unlock/lock (keys never returned), chat action logging, graph rank, deep research brief, repo audit (TestClient against `scire_test`).
 - [x] `test_cli.py` — `scire whoami` reports provider + key status without a real key.
 - [x] `test_shell.py` — ASCII render (`render_tree`/`find_hub`), JSON export/import roundtrip, `scire shell` REPL commands (all network/LLM mocked).
 - [x] Smoke test (skipped when `SCIRE_CI=1`): real LLM call via `scire chat`.

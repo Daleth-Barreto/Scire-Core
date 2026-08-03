@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { fetchPaper, runWebSearch, type Candidate } from './api'
+import { deepResearch, fetchPaper, runWebSearch, type Candidate, type ResearchBrief } from './api'
 
 export default function SearchView() {
   const [query, setQuery] = useState('')
@@ -11,17 +11,33 @@ export default function SearchView() {
   const [externalId, setExternalId] = useState('arxiv:')
   const [fetched, setFetched] = useState<Candidate | null>(null)
   const [fetchBusy, setFetchBusy] = useState(false)
+  const [brief, setBrief] = useState<ResearchBrief | null>(null)
+  const [deepBusy, setDeepBusy] = useState(false)
 
   async function onSearch() {
     if (!query.trim()) return
     setBusy(true)
     setError('')
+    setBrief(null)
     try {
       setResults(await runWebSearch(query.trim(), limit, persist))
     } catch (err) {
       setError((err as Error).message)
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function onDeep() {
+    if (!query.trim()) return
+    setDeepBusy(true)
+    setError('')
+    try {
+      setBrief(await deepResearch(query.trim(), 5))
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setDeepBusy(false)
     }
   }
 
@@ -74,7 +90,47 @@ export default function SearchView() {
         save results to my knowledge graph
       </label>
 
+      <button onClick={() => void onDeep()} disabled={deepBusy || !query.trim()} className="wide">
+        {deepBusy ? 'researching… this takes a minute' : 'Deep research this topic'}
+      </button>
+      <p className="muted helper">
+        Runs a full research pipeline: gathers sources, writes a cited brief, and verifies each
+        claim against them.
+      </p>
+
       {error && <p className="error">{error}</p>}
+
+      {brief && (
+        <div className="brief">
+          <h3>Research brief: {brief.topic}</h3>
+          {brief.verified ? (
+            <p className="ok">Verified — every claim is backed by a source.</p>
+          ) : (
+            <p className="error">Not fully verified — review the flagged issues below.</p>
+          )}
+          {brief.issues.length > 0 && (
+            <ul className="plain">
+              {brief.issues.map((issue) => (
+                <li key={issue} className="muted">
+                  {issue}
+                </li>
+              ))}
+            </ul>
+          )}
+          <pre className="answer">{brief.markdown}</pre>
+          <h4>Sources</h4>
+          <ul className="plain">
+            {brief.sources.map((source, i) => (
+              <li key={`${source.source}-${i}`}>
+                <span className="tag">{source.source}</span> [{i + 1}] {source.title} —{' '}
+                <a href={source.url} target="_blank" rel="noreferrer">
+                  {source.url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <h3>Fetch a specific paper by ID</h3>
       <p className="muted helper">

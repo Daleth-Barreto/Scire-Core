@@ -10,7 +10,7 @@ import {
   type NodeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { detectGaps, fetchGraph, fetchNodeDetail, type GraphNode, type NodeDetail } from './api'
+import { detectGaps, fetchGraph, fetchNodeDetail, rankPapers, type GraphNode, type NodeDetail, type RankedPaper } from './api'
 
 const TYPE_COLORS: Record<string, string> = {
   paper: '#8b5cf6',
@@ -95,6 +95,9 @@ export default function GraphView() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [rankQuery, setRankQuery] = useState('')
+  const [ranked, setRanked] = useState<RankedPaper[] | null>(null)
+  const [rankBusy, setRankBusy] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -142,6 +145,19 @@ export default function GraphView() {
       setError((err as Error).message)
     }
   }, [])
+
+  const onRank = useCallback(async () => {
+    if (!rankQuery.trim()) return
+    setRankBusy(true)
+    setError('')
+    try {
+      setRanked(await rankPapers(rankQuery.trim(), 10))
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setRankBusy(false)
+    }
+  }, [rankQuery])
 
   return (
     <div className="graph-layout">
@@ -202,6 +218,31 @@ export default function GraphView() {
             </li>
           ))}
         </ul>
+
+        <h3>Rank papers</h3>
+        <p className="muted helper">Your most relevant papers for a topic, scored by citations and evidence.</p>
+        <div className="row" style={{ marginBottom: 10 }}>
+          <input
+            value={rankQuery}
+            onChange={(e) => setRankQuery(e.target.value)}
+            placeholder="topic, e.g. graph neural networks"
+            onKeyDown={(e) => e.key === 'Enter' && void onRank()}
+          />
+          <button onClick={() => void onRank()} disabled={rankBusy}>
+            {rankBusy ? 'ranking…' : 'Rank'}
+          </button>
+        </div>
+        {ranked !== null && (
+          <ol className="plain ranked">
+            {ranked.length === 0 && <li className="muted">No papers found for this topic.</li>}
+            {ranked.map((paper) => (
+              <li key={paper.id} className="ranked-item">
+                <span className="tag">{(paper.score * 100).toFixed(0)}%</span>
+                {paper.title}
+              </li>
+            ))}
+          </ol>
+        )}
 
         <h3>Node details</h3>
         {detail ? (

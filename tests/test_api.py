@@ -289,3 +289,92 @@ def test_chat_logs_action_and_replies(client, mocker):
     with session_scope(TEST_DB_URL) as s:
         actions = GraphStore(s).list_nodes(type="action")
     assert any(a.title == "chat" for a in actions)
+
+
+def test_graph_rank_returns_scored_papers(client, session, mocker):
+    with session_scope(TEST_DB_URL) as s:
+        store = GraphStore(s)
+        store.upsert_node(
+            type="paper",
+            title="Graph Neural Networks",
+            embedding=make_embed(1),
+            properties={"source": "arxiv", "cited_by_count": 12},
+        )
+        store.upsert_node(
+            type="paper",
+            title="Attention",
+            embedding=make_embed(5),
+            properties={"source": "web"},
+        )
+    fake_embedder = mocker.MagicMock()
+    fake_embedder.embed.return_value = [make_embed(1)]
+    mocker.patch("backend.core.providers.get_embedder", return_value=fake_embedder)
+
+    ranked = client.post("/api/graph/rank", json={"query": "graph neural networks", "top_k": 5}).json()
+    assert ranked, ranked
+    assert ranked[0]["title"] == "Graph Neural Networks"
+    assert "score" in ranked[0]
+    assert all(0 <= r["score"] <= 1 for r in ranked)
+    assert sorted(ranked, key=lambda r: r["score"], reverse=True) == ranked
+
+
+def test_graph_rank_without_embedder_503(client, mocker):
+    mocker.patch(
+        "backend.core.providers.get_embedder",
+        side_effect=NotImplementedError("no embedder"),
+    )
+    assert client.post("/api/graph/rank", json={"query": "x"}).status_code == 503
+
+
+def test_research_deep_returns_brief(client, mocker):
+    from backend.research.deepresearch import ResearchBrief, SourceNote
+
+    brief = ResearchBrief(
+        topic="retrieval augmented generation",
+        markdown="## RAG\n\nRAG augments LLMs [1].",
+        sources=[SourceNote(title="RAG Paper", url="https://arxiv.org/abs/2005.11401", source="arxiv", summary="s")],
+        verified=True,
+        issues=[],
+    )
+    mocker.patch("backend.research.deepresearch.deepresearch", return_value=brief)
+
+    data = client.post("/api/research/deep", json={"topic": "rag"}).json()
+    assert data["topic"] == "retrieval augmented generation"
+    assert "[1]" in data["markdown"]
+    assert data["verified"] is True
+    assert data["sources"][0]["title"] == "RAG Paper"
+    assert data["issues"] == []
+
+
+def test_research_deep_no_sources_400(client, mocker):
+    mocker.patch("backend.research.deepresearch.deepresearch", side_effect=ValueError("no sources"))
+    assert client.post("/api/research/deep", json={"topic": "x"}).status_code == 400
+
+
+def test_repos_audit_returns_verdicts(client, mocker):
+    from backend.repos.audit import AuditReport, AuditVerdict
+
+    report = AuditReport(
+        paper_title="Attention Is All You Need",
+        repo="psf/requests",
+        verdicts=[AuditVerdict(claim="uses transformer", verdict="supported", evidence="src/transformers.py:10")],
+    )
+    mocker.patch("backend.repos.audit.audit_paper", return_value=report)
+
+    data = client.post(
+        "/api/repos/audit",
+        json={"paper_title": "Attention Is All You Need", "owner": "psf", "repo": "requests"},
+    ).json()
+    assert data["paper_title"] == "Attention Is All You Need"
+    assert data["repo"] == "psf/requests"
+    assert data["verdicts"][0]["verdict"] == "supported"
+    assert data["verdicts"][0]["evidence"] == "src/transformers.py:10"
+    assert data["summary"] == {"supported": 1, "refuted": 0, "not-evidenced": 0}
+
+
+def test_repos_audit_missing_paper_404(client, mocker):
+    mocker.patch("backend.repos.audit.audit_paper", side_effect=ValueError("paper not found"))
+    assert (
+        client.post("/api/repos/audit", json={"paper_title": "Nope", "owner": "psf", "repo": "requests"}).status_code
+        == 404
+    )

@@ -78,3 +78,59 @@ class ConfigKeysIn(BaseModel):
 
 class ConfigUnlockIn(BaseModel):
     passphrase: str
+
+
+class RankIn(BaseModel):
+    query: str
+    top_k: int = Field(10, ge=1, le=50)
+
+
+class RankedOut(BaseModel):
+    id: str
+    title: str
+    score: float
+    relevance: float
+    citations: float
+    method: float
+    provenance: float
+
+
+class DeepResearchIn(BaseModel):
+    topic: str
+    limit: int = Field(5, ge=1, le=20)
+
+
+class SourceOut(BaseModel):
+    title: str
+    url: str
+    source: str
+    summary: str = ""
+    authors: list[str] = []
+
+
+class DeepResearchOut(BaseModel):
+    topic: str
+    markdown: str
+    sources: list[SourceOut] = []
+    verified: bool = False
+    issues: list[str] = []
+
+
+class RepoAuditIn(BaseModel):
+    paper_title: str
+    owner: str
+    repo: str
+
+
+class AuditVerdictOut(BaseModel):
+    claim: str
+    verdict: str
+    evidence: str = ""
+    reason: str = ""
+
+
+class AuditOut(BaseModel):
+    paper_title: str
+    repo: str
+    verdicts: list[AuditVerdictOut] = []
+    summary: dict[str, int] = {}

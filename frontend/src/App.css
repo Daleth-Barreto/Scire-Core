@@ -229,6 +229,56 @@ button.wide {
   font-size: 13px;
 }
 
+.ranked-item {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.brief .answer {
+  max-height: 420px;
+  overflow-y: auto;
+  margin: 10px 0;
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+  max-height: calc(100vh - 320px);
+  overflow-y: auto;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  background: #4c1d95;
+  color: #fff;
+}
+
+.bubble.assistant {
+  align-self: flex-start;
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+.chat .panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.audit li {
+  margin: 6px 0;
+}
+
 .helper {
   margin: 2px 0 10px;
 }

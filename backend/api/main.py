@@ -3,17 +3,25 @@ from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.schemas import (
+    AuditOut,
+    AuditVerdictOut,
     CandidateOut,
     ChatIn,
     ConfigKeysIn,
     ConfigOut,
     ConfigUnlockIn,
+    DeepResearchIn,
+    DeepResearchOut,
     GraphOut,
     NoteIn,
     PaperFetchIn,
+    RankedOut,
+    RankIn,
     RepoAddIn,
     RepoAskIn,
+    RepoAuditIn,
     SearchIn,
+    SourceOut,
 )
 from backend.core.envfile import mask
 from backend.graph.db import session_scope
@@ -160,6 +168,32 @@ def paper_fetch(body: PaperFetchIn) -> CandidateOut:
     return CandidateOut(**candidate.model_dump())
 
 
+@app.post("/api/graph/rank", response_model=list[RankedOut])
+def graph_rank(body: RankIn) -> list[RankedOut]:
+    try:
+        from backend.core.providers import get_embedder
+
+        embedding = get_embedder().embed([body.query])[0]
+    except (httpx.HTTPError, NotImplementedError, ValueError):
+        raise HTTPException(status_code=503, detail="embedding unavailable")
+    with session_scope() as session:
+        from backend.graph.rank import rank_papers
+
+        ranked = rank_papers(GraphStore(session), embedding, top_k=body.top_k)
+        return [
+            RankedOut(
+                id=paper.node.id,
+                title=paper.node.title,
+                score=paper.score,
+                relevance=paper.relevance,
+                citations=paper.citations,
+                method=paper.method,
+                provenance=paper.provenance,
+            )
+            for paper in ranked
+        ]
+
+
 @app.post("/api/graph/gaps")
 def graph_gaps() -> list[str]:
     with session_scope() as session:
@@ -213,6 +247,25 @@ def search(body: SearchIn) -> list[CandidateOut]:
     return candidates
 
 
+@app.post("/api/research/deep", response_model=DeepResearchOut)
+def research_deep(body: DeepResearchIn) -> DeepResearchOut:
+    from backend.research.deepresearch import deepresearch
+
+    try:
+        brief = deepresearch(body.topic, limit=body.limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    return DeepResearchOut(
+        topic=brief.topic,
+        markdown=brief.markdown,
+        sources=[SourceOut(**source.__dict__) for source in brief.sources],
+        verified=brief.verified,
+        issues=brief.issues,
+    )
+
+
 @app.post("/api/repos/add")
 def repo_add(body: RepoAddIn) -> dict[str, int | str]:
     from backend.core.config import get_settings
@@ -252,6 +305,33 @@ def repo_ask(body: RepoAskIn) -> dict[str, str]:
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc))
         return {"answer": answer}
+
+
+@app.post("/api/repos/audit", response_model=AuditOut)
+def repos_audit(body: RepoAuditIn) -> AuditOut:
+    from backend.repos.audit import audit_paper
+
+    with session_scope() as session:
+        try:
+            report = audit_paper(GraphStore(session), body.paper_title, body.owner, body.repo)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc))
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=503, detail=str(exc))
+        return AuditOut(
+            paper_title=report.paper_title,
+            repo=report.repo,
+            verdicts=[
+                AuditVerdictOut(
+                    claim=verdict.claim,
+                    verdict=verdict.verdict,
+                    evidence=verdict.evidence,
+                    reason=verdict.reason,
+                )
+                for verdict in report.verdicts
+            ],
+            summary=report.summary(),
+        )
 
 
 @app.get("/api/notes")

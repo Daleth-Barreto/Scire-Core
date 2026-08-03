@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ChatView from './ChatView'
 import GraphView from './GraphView'
 import SearchView from './SearchView'
 import RepoView from './RepoView'
@@ -7,12 +8,13 @@ import IngestView from './IngestView'
 import SettingsView from './SettingsView'
 import './App.css'
 
-type Tab = 'graph' | 'search' | 'repo' | 'notes' | 'ingest' | 'settings'
+type Tab = 'graph' | 'search' | 'repo' | 'chat' | 'notes' | 'ingest' | 'settings'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'graph', label: 'Graph', hint: 'Explore your knowledge graph of papers, authors, and concepts' },
   { id: 'search', label: 'Search', hint: 'Find papers on the web or fetch a paper by its ID' },
   { id: 'repo', label: 'Repo', hint: 'Index a GitHub repo, then ask questions about its code' },
+  { id: 'chat', label: 'Chat', hint: 'Ask your LLM anything with your configured provider' },
   { id: 'notes', label: 'Notes', hint: 'Save thoughts that become nodes in your graph' },
   { id: 'ingest', label: 'Ingest', hint: 'Upload a PDF to add its contents to your graph' },
   { id: 'settings', label: 'Settings', hint: 'Choose your LLM provider and manage API keys' },
@@ -42,6 +44,7 @@ export default function App() {
         {tab === 'graph' && <GraphView />}
         {tab === 'search' && <SearchView />}
         {tab === 'repo' && <RepoView />}
+        {tab === 'chat' && <ChatView />}
         {tab === 'notes' && <NotesView />}
         {tab === 'ingest' && <IngestView />}
         {tab === 'settings' && <SettingsView />}

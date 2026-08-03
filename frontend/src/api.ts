@@ -161,6 +161,19 @@ export function lockConfig(): Promise<{ status: string }> {
   return request('/api/config/lock', { method: 'POST' })
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export function sendChat(message: string): Promise<string> {
+  return request<{ answer: string }>('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  }).then((res) => res.answer)
+}
+
 export function detectGaps(): Promise<string[]> {
   return request<string[]>('/api/graph/gaps', { method: 'POST' })
 }
@@ -178,4 +191,68 @@ export function ingestPdf(file: File, title: string): Promise<IngestCounts> {
   form.append('file', file)
   if (title.trim()) form.append('title', title.trim())
   return request<IngestCounts>('/api/ingest/pdf', { method: 'POST', body: form })
+}
+
+export interface RankedPaper {
+  id: string
+  title: string
+  score: number
+  relevance: number
+  citations: number
+  method: number
+  provenance: number
+}
+
+export function rankPapers(query: string, topK: number): Promise<RankedPaper[]> {
+  return request<RankedPaper[]>('/api/graph/rank', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, top_k: topK }),
+  })
+}
+
+export interface ResearchSource {
+  title: string
+  url: string
+  source: string
+  summary: string
+  authors: string[]
+}
+
+export interface ResearchBrief {
+  topic: string
+  markdown: string
+  sources: ResearchSource[]
+  verified: boolean
+  issues: string[]
+}
+
+export function deepResearch(topic: string, limit: number): Promise<ResearchBrief> {
+  return request<ResearchBrief>('/api/research/deep', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic, limit }),
+  })
+}
+
+export interface AuditVerdict {
+  claim: string
+  verdict: string
+  evidence: string
+  reason: string
+}
+
+export interface AuditReport {
+  paper_title: string
+  repo: string
+  verdicts: AuditVerdict[]
+  summary: Record<string, number>
+}
+
+export function auditPaper(paperTitle: string, owner: string, repo: string): Promise<AuditReport> {
+  return request<AuditReport>('/api/repos/audit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paper_title: paperTitle, owner, repo }),
+  })
 }
